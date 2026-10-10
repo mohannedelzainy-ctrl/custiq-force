@@ -1,6 +1,6 @@
-E-Commerce Customer Intelligence & Purchase Prediction
+# E-Commerce Customer Intelligence & Purchase Prediction
 
-DEPI Graduation Project | Data Science
+# DEPI Graduation Project | Data Science
 
 Turning E-Commerce Data into Business Insights and Predictive Intelligence
 
