@@ -129,10 +129,10 @@ Task ownership identifies each member's primary responsibility, not isolated wor
 
 | Mohanned Mohammed Galal | Project Lead; SQL, Business Metrics, GitHub coordination |
 |---|---|
-| Shahd Magdy | Dataset preparation and database setup |
+| Shahd Magdy Abdelwahd | Dataset preparation and database setup |
 | Marwa Elbadawy Mohammed | Data cleaning, EDA, customer behavior analysis |
 | Yassin Hassan Abdelkader | Machine learning, model evaluation, and interpretation |
-| Mohammed Atef | Streamlit dashboard, results, and recommendations |
+| Mohammed Atef Mosa | Streamlit dashboard, results, and recommendations |
 
 ## 11. Proposed End-to-End Workflow
 
