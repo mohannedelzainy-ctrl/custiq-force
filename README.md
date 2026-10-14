@@ -1,110 +1,224 @@
-# E-Commerce Customer Intelligence & Purchase Prediction
+# Custiq Force
 
-# DEPI Graduation Project | Data Science
+## E-commerce Customer Intelligence & Retention
 
-Turning E-Commerce Data into Business Insights and Predictive Intelligence
+**DEPI Graduation Project — Data Science**
 
-1. Project Overview
+| Field | Details |
+|---|---|
+| Program | DEPI Graduation Project — Data Science |
+| Supervisor | Eng. Ahmed Mostafa |
+| Submission Date | 6 December 2026 |
+| Dataset | Olist Brazilian E-Commerce Public Dataset |
+| Document Status | Draft v0.2 — Machine learning included; detailed decisions pending |
 
-This project aims to develop an E-Commerce Customer Intelligence Platform that combines data analysis, SQL, and Machine Learning to better understand customer purchasing behavior and support data-driven business decisions.
+## 1. Executive Summary
 
-The platform is planned to connect business analytics with predictive modeling, helping transform transactional data into meaningful insights about customers, products, sales, and purchasing patterns.
+Custiq Force is an E-commerce AI and Data Science project intended to turn customer and transaction data into actionable business insights. Its planned focus is repeat-purchase prediction, customer value analysis, identifying customers who may be at risk of not returning, and providing data-informed recommendations to support customer retention.
 
-The project will be developed incrementally, with its final implementation shaped by the available data, validated business requirements, and the team's progress.
+The selected source is the Olist Brazilian E-Commerce Public Dataset. The team will inspect the actual downloaded files, verify their schema and quality, and then finalize business definitions, analytical methods, and predictive targets. No model performance or business findings are claimed before analysis is completed.
 
-2. Business Problem
+## 2. Project Information
 
-E-commerce businesses generate data about customers, orders, products, and purchasing activity. Analyzing these records can help reveal useful patterns, but turning those patterns into reliable business decisions requires a structured analytical approach.
+| Program | DEPI Graduation Project — Data Science |
+|---|---|
+| Supervisor | Eng. Ahmed Mostafa |
+| Submission Date | 6 December 2026 |
+| Dataset | Olist Brazilian E-Commerce Public Dataset |
+| Document Status | Draft v0.2 — Machine learning included; detailed decisions pending |
 
-This project aims to investigate questions such as:
+## 3. Background and Business Problem
 
-- How do customers differ in their purchasing behavior?
-- Which products and categories perform well?
-- What patterns can be identified in sales and repeat purchases?
-- Can historical data support predictions about future customer purchasing behavior?
-- How can analytical and predictive results help businesses make better-informed decisions?
+E-commerce businesses can use customer and transaction history to better understand purchasing behavior and prioritize retention efforts. Without structured analysis, it can be difficult to identify valuable customers, recognize changes in purchase activity, or determine which customers may benefit from targeted engagement.
 
-3. Project Objectives
+Custiq Force aims to provide an analytical workflow that connects customer data with interpretable insights and practical recommendations. The exact analytical scope will be confirmed after the dataset is reviewed.
 
-- Organize and analyze relevant e-commerce data.
-- Use SQL to investigate business performance and customer behavior.
-- Apply data cleaning and exploratory data analysis.
-- Develop meaningful features for customer analysis.
-- Investigate suitable Machine Learning approaches for a clearly defined prediction task.
-- Evaluate models using metrics appropriate to the selected problem.
-- Explore ways to interpret model predictions.
-- Present important findings through an interactive dashboard.
-- Investigate serving the selected model through a FastAPI endpoint.
+## 4. Project Objectives
 
-4. Planned Project Features
+- Estimate the likelihood that a customer will make another purchase, if the data supports a defensible target and evaluation design.
+- Identify customers who may be at risk of not returning using an agreed, time-based definition of inactivity.
+- Analyze customer value using suitable measures supported by the dataset.
+- Provide evidence-based recommendations for customer retention and business decision-making.
 
-Business Analytics
+## 5. Dataset Overview
 
-Analyze customer behavior, purchasing frequency, sales trends, and product performance using SQL and Python.
+Dataset name: Olist Brazilian E-Commerce Public Dataset.
 
-Data Preparation
+Source page: https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
 
-Inspect data quality, handle missing or inconsistent values where appropriate, and prepare data for analysis.
+The dataset is a multi-table snapshot of Brazilian e-commerce orders and related entities. It is commonly described as covering roughly 100,000 orders placed between 2016 and 2018. The team must confirm exact record counts, date coverage, and available columns from its downloaded files before including these figures in final reporting.
 
-Predictive Modeling
+Important modeling note: customer_id generally identifies a customer record associated with an order, while customer_unique_id is intended to link repeat activity for the same underlying customer. Repeat-purchase analysis should investigate customer_unique_id rather than assuming customer_id alone identifies a person across orders.
 
-Explore suitable supervised Machine Learning techniques after defining a prediction target supported by the available data.
+| olist_customers_dataset.csv | Customer records; includes customer_id and customer_unique_id |
+|---|---|
+| olist_orders_dataset.csv | Order status and timestamps |
+| olist_order_items_dataset.csv | Order items, product/seller references, price and freight |
+| olist_order_payments_dataset.csv | Payment information for orders |
+| olist_order_reviews_dataset.csv | Customer review information |
+| olist_products_dataset.csv | Product attributes and category |
+| olist_sellers_dataset.csv | Seller records |
+| olist_geolocation_dataset.csv | Brazilian ZIP-code geolocation data |
+| product_category_name_translation.csv | Portuguese-to-English product category translation |
 
-Explainable Results
+These are the commonly supplied dataset components. Verify which files are present in the team's download; do not assume every file is included or complete.
 
-Investigate the factors influencing model predictions and communicate the results in an understandable way.
+## 6. Data Validation and Preparation
 
-Interactive Dashboard
+- Record actual file names, row counts, column counts, data types, and date coverage.
+- Inspect missing values, duplicates, invalid timestamps, unusual values, and key uniqueness.
+- Understand the grain of each table: customer, order, order item, payment, review, product, seller, or geolocation record.
+- Check join keys and relationship cardinalities before combining tables to avoid duplicated orders or inflated revenue.
+- Review order statuses and define which orders qualify for each metric.
+- Document the data dictionary, assumptions, limitations, license, and permitted use.
+- Keep raw data unchanged and make preparation reproducible through scripts or notebooks.
 
-Present business metrics, analytical findings, and model evaluation results through a visual interface.
+## 7. Business Definitions to Finalize
 
-API Integration
+The following are proposed work items, not finalized definitions:
 
-Explore integrating the selected model into a FastAPI service for structured prediction requests and responses.
+- Repeat purchase: a customer places a subsequent qualifying order after a defined cutoff date.
+- Customer at risk: a customer has not placed a qualifying order within a justified inactivity window. The window must be selected after examining the date range and purchase cadence.
+- Customer value: choose supported measures such as purchase frequency, recency, and qualifying order value; document treatment of canceled orders, freight, and payment records.
+- Business metrics: candidate measures include qualifying orders, repeat-customer rate, average order value, purchase frequency, recency, and revenue summaries. Exact formulas must be documented.
+- Prediction unit: define whether each modeling row represents a customer at a snapshot date or another unit.
 
-5. Proposed Technology Stack
+## 8. Machine Learning Approach
 
-- Python
-- SQL
-- Pandas and NumPy
-- Matplotlib and Seaborn
-- Scikit-learn
-- Interactive dashboard framework
-- MLflow for experiment tracking
-- FastAPI for API development
-- Git and GitHub for version control
+Machine learning is an explicit component of Custiq Force. The team will define a valid prediction target from the dataset, create customer-level features, train and compare suitable models, evaluate results, and interpret model behavior. The final target, model algorithms, and metrics will be chosen after dataset validation rather than assumed in advance.
 
-The final tools will be confirmed according to the project requirements and implementation plan.
+### Planned ML workflow
 
-6. Planned Workflow
+1. Define the business question and prediction unit.
+2. Create a time-aware target and observation window, if supported by available timestamps.
+3. Build features using only information available at the prediction cutoff.
+4. Create a baseline model and then compare suitable alternatives.
+5. Evaluate on held-out data; consider a time-based split to reflect future use.
+6. Review errors, class balance, and metric trade-offs.
+7. Interpret predictions and document limitations before turning results into recommendations.
 
-1. Define the business problem and project scope.
-2. Select and understand a suitable dataset.
-3. Design the data storage and relational structure where needed.
-4. Perform data validation, cleaning, and exploratory analysis.
-5. Develop analytical features and define the prediction target.
-6. Train and evaluate suitable Machine Learning models.
-7. Investigate model interpretation and experiment tracking.
-8. Develop an interactive dashboard.
-9. Integrate the selected model through an API where appropriate.
-10. Test, document, and present the completed solution.
+### Potential evaluation metrics
 
-7. Team Collaboration
+For a classification task, candidate metrics include precision, recall, F1-score, ROC-AUC, and a confusion matrix. The team should select metrics based on class balance and business priorities; accuracy alone may be misleading. Probability calibration may matter if predicted probabilities are used to prioritize customers.
 
-The project is being developed by a team of five members.
+### Leakage and explainability
 
-Responsibilities will be assigned across data preparation, SQL analytics, exploratory analysis, Machine Learning, dashboard development, and integration.
+Features must not contain information from after the prediction cutoff. Model interpretation can describe patterns and feature contributions, but feature importance does not prove causation. The final documentation should report the chosen method, evaluation results, limitations, and the meaning of predictions in business terms.
 
-Team members will collaborate on data definitions, testing, documentation, and combining the separate components into a consistent final solution.
+## 9. Scope and Boundaries
 
-8. Expected Outcome
+### Planned scope
 
-The intended outcome is an integrated E-Commerce Customer Intelligence Platform that demonstrates how data analysis and Machine Learning can be used to understand customer behavior, discover business patterns, and support informed decisions.
+- Dataset inspection and data dictionary.
+- Data cleaning and exploratory data analysis (EDA).
+- SQL queries and business metrics.
+- Machine-learning experiments, evaluation, and interpretation.
+- Streamlit dashboard for selected metrics, analyses, model outputs, and recommendations.
+- GitHub repository with documented code, workflow, and project files.
 
-The final features and deliverables will depend on the selected data, validated findings, and the team's implementation progress.
+### Out of scope unless approved later
 
-9. Project Status
+- Live integration with a production e-commerce platform.
+- Automated marketing campaigns or direct customer messaging.
+- Claims that recommendations cause business improvements without an appropriate experiment.
+- Predictions or features unsupported by the available data.
 
-Status: Planning and Development
+## 10. Team Structure and Responsibilities
 
-The project scope and workflow are being organized. The dataset, final prediction target, detailed implementation choices, and deliverables will be confirmed as the project progresses.
+Task ownership identifies each member's primary responsibility, not isolated work. The team will learn together and review code, assumptions, and results across stages.
+
+| Mohanned Mohammed Galal | Project Lead; SQL, Business Metrics, GitHub coordination |
+|---|---|
+| Shahd Magdy | Dataset preparation and database setup |
+| Marwa Elbadawy Mohammed | Data cleaning, EDA, customer behavior analysis |
+| Yassin Hassan Abdelkader | Machine learning, model evaluation, and interpretation |
+| Mohammed Atef | Streamlit dashboard, results, and recommendations |
+
+## 11. Proposed End-to-End Workflow
+
+1. Inventory dataset files and review source/license conditions.
+2. Understand table grain, columns, keys, date coverage, and business context.
+3. Design the relational database and load appropriate tables into MySQL, if suitable.
+4. Perform data quality checks, cleaning, and EDA using Python, Pandas, Matplotlib, and Seaborn.
+5. Create customer-level features and business metrics with SQL/Python; document formulas.
+6. Define repeat-purchase and at-risk targets using time-aware logic where feasible.
+7. Train a baseline machine-learning model and compare appropriate alternatives.
+8. Evaluate and interpret model results; record limitations.
+9. Build the Streamlit dashboard and connect it to validated analysis outputs.
+10. Review the complete workflow, document setup instructions, and prepare the final presentation.
+
+## 12. Technology Stack
+
+| Python | Data analysis, feature engineering, and modeling |
+|---|---|
+| Pandas | Tabular data loading and transformation |
+| SQL / MySQL | Data querying, joins, and business metrics |
+| Scikit-learn | Model pipelines, training, and evaluation |
+| Matplotlib / Seaborn | Exploratory and explanatory visualizations |
+| Streamlit | Interactive dashboard |
+| GitHub | Version control, collaboration, issues, and documentation |
+
+## 13. Dashboard Plan
+
+The Streamlit dashboard is planned to present a selected subset of validated outputs. Candidate views include overall order/customer metrics, repeat-purchase patterns, customer value analysis, at-risk customer indicators, model evaluation, and recommendations. Final pages and filters will be decided after the dataset and analysis are understood.
+
+## 14. GitHub and Collaboration
+
+- Keep a README with project purpose, dataset source, setup instructions, and current status.
+- Use a clear folder structure for data notes, notebooks, source code, dashboard, and documentation.
+- Do not commit credentials or private information. Check dataset redistribution terms before uploading raw data.
+- Use descriptive commits and review changes before merging into the main branch.
+- Track decisions, unresolved questions, and task ownership in GitHub Issues or a shared task board.
+
+```text
+custiq-force/\n├── README.md\n├── docs/\n│   ├── project_documentation.md\n│   └── data_dictionary.md\n├── data/\n│   └── README.md\n├── notebooks/\n├── src/\n├── dashboard/\n├── tests/\n└── requirements.txt
+```
+
+## 15. Risks and Mitigations
+
+| Risk | Mitigation |
+|---|---|
+| Customer identity confusion | Validate customer_unique_id for customer-level repeat behavior. |
+| Data leakage | Define a prediction cutoff; exclude future-derived features; use time-based evaluation where feasible. |
+| Join duplication | Document table grain and test row counts and key cardinalities after joins. |
+| Ambiguous churn definition | Agree on and justify an inactivity window; state that it is a project definition. |
+| Class imbalance | Inspect target distribution and report metrics beyond accuracy. |
+| Overstated recommendations | Separate prediction/correlation from causation and document limitations. |
+| Scope creep | Prioritize a working end-to-end baseline before optional features. |
+
+## 16. Deliverables
+
+- Dataset inventory and data dictionary.
+- Reproducible data preparation and EDA outputs.
+- SQL queries and documented business metric definitions.
+- Machine-learning model(s), evaluation results, and interpretation.
+- Streamlit dashboard.
+- GitHub repository with README and setup instructions.
+- Final presentation and project documentation.
+
+## 17. Timeline and Milestones
+
+Submission date supplied by the team: 6 December 2026. Intermediate dates have not been supplied, so milestones are listed without invented deadlines.
+
+1. Dataset validation and project scope confirmation.
+2. Database setup and data preparation.
+3. EDA and business metric definitions.
+4. Target definition, feature engineering, baseline modeling, and evaluation.
+5. Dashboard development and integration.
+6. Testing, documentation review, and final presentation.
+
+## 18. Open Decisions
+
+- Confirm exact downloaded files and row counts.
+- Confirm whether Custiq Force is the final project name.
+- Define qualifying order statuses and treatment of canceled/unavailable orders.
+- Choose prediction cutoff, future window, and repeat-purchase definition.
+- Choose and justify the inactivity window for identifying customers at risk.
+- Finalize customer value formula and business metric definitions.
+- Select model candidates and evaluation metrics after inspecting the target.
+- Confirm GitHub repository URL and whether raw data may be shared.
+
+## 19. Conclusion
+
+Custiq Force will use the Olist Brazilian E-Commerce Public Dataset as the starting point for a collaborative Data Science workflow. Machine learning is a core part of the project alongside SQL, business analysis, data preparation, and dashboard development. The project will prioritize data understanding, valid business definitions, careful evaluation, and clear recommendations. Final conclusions will be added only after the team analyzes the actual data.
+
