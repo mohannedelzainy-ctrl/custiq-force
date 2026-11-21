@@ -1,224 +1,185 @@
-# Custiq Force
-
-## E-commerce Customer Intelligence & Retention
-
+# Custiq Force — E-Commerce Customer Intelligence & Retention
 **DEPI Graduation Project — Data Science**
 
 | Field | Details |
 |---|---|
-| Program | DEPI Graduation Project — Data Science |
-| Supervisor | Eng. Ahmed Mostafa |
-| Submission Date | 6 December 2026 |
-| Dataset | Olist Brazilian E-Commerce Public Dataset |
-| Document Status | Draft v0.2 — Machine learning included; detailed decisions pending |
+| **Program** | DEPI Graduation Project — Data Science |
+| **Supervisor** | Eng. Ahmed Mostafa |
+| **Submission Date** | 6 December 2026 |
+| **Dataset** | Olist Brazilian E-Commerce Public Dataset |
+| **GitHub Repository** | `https://github.com/mohannedelzainy-ctrl/custiq-force` |
+| **Document Status** | **Final v1.0 — Analysis, Modeling & Dashboard Completed** |
+
+---
 
 ## 1. Executive Summary
+**Custiq Force** is an end-to-end Data Science and Machine Learning solution built on the **Olist Brazilian E-Commerce Public Dataset** (`96,096` unique customers, `98,666` qualifying orders, and `R$ 15.84M` in item revenue). The project solves a core e-commerce retention problem: **identifying the rare `~1.14%` of customers likely to place a repeat purchase within 180 days**, enabling marketing teams to focus retention spend on high-propensity cohorts rather than untargeted mass discounts.
 
-Custiq Force is an E-commerce AI and Data Science project intended to turn customer and transaction data into actionable business insights. Its planned focus is repeat-purchase prediction, customer value analysis, identifying customers who may be at risk of not returning, and providing data-informed recommendations to support customer retention.
+Using a strict point-in-time feature store at cutoff **`2018-03-01`** (`52,013` eligible customers × `32` behavioral, RFM, payment, review, and delivery SLA features), our calibrated **`LogisticRegression_balanced`** model achieved a **3.33x Top-1% Decile Targeting Lift** on temporal holdout evaluation (`10,403` test customers) and stratified all active customers into three actionable CRM retention tiers.
 
-The selected source is the Olist Brazilian E-Commerce Public Dataset. The team will inspect the actual downloaded files, verify their schema and quality, and then finalize business definitions, analytical methods, and predictive targets. No model performance or business findings are claimed before analysis is completed.
+---
 
 ## 2. Project Information
+- **Program:** DEPI Graduation Project — Data Science
+- **Supervisor:** Eng. Ahmed Mostafa
+- **Submission Date:** 6 December 2026
+- **Dataset:** Olist Brazilian E-Commerce Public Dataset
+- **Document Status:** Final v1.0 — Completed & Validated
 
-| Program | DEPI Graduation Project — Data Science |
-|---|---|
-| Supervisor | Eng. Ahmed Mostafa |
-| Submission Date | 6 December 2026 |
-| Dataset | Olist Brazilian E-Commerce Public Dataset |
-| Document Status | Draft v0.2 — Machine learning included; detailed decisions pending |
+---
 
 ## 3. Background and Business Problem
+E-commerce marketplaces often struggle with low repeat-purchase conversion (`~1.14%` within 180 days in the Olist cohort) and high customer acquisition costs. Without predictive segmentation, retention campaigns either waste budget on mass discounts or fail to reach high-value customers before they churn.
 
-E-commerce businesses can use customer and transaction history to better understand purchasing behavior and prioritize retention efforts. Without structured analysis, it can be difficult to identify valuable customers, recognize changes in purchase activity, or determine which customers may benefit from targeted engagement.
+Custiq Force provides a reproducible, leakage-free analytical pipeline that connects raw multi-table order logs with SQL business metrics, interpretable machine learning propensity scores, and an interactive decision-support dashboard.
 
-Custiq Force aims to provide an analytical workflow that connects customer data with interpretable insights and practical recommendations. The exact analytical scope will be confirmed after the dataset is reviewed.
+---
 
 ## 4. Project Objectives
+1. **Repeat-Purchase Propensity Prediction:** Estimate each customer's probability of placing a repeat qualifying order within a `180-day` forward window (`2018-03-01` to `2018-08-28`).
+2. **At-Risk & Retention Tier Segmentation:** Classify customers into three operational retention cohorts (`High — Top 5%`, `Medium — Next 15%`, and `Low — Bottom 80%`) based on calibrated propensity scores and recency indicators.
+3. **Customer Value & Experience Analysis:** Quantify customer monetary value, installment behavior, review sentiment, and delivery SLA impact across Brazilian states.
+4. **Actionable Decision Support:** Deliver reproducible code, automated quality tests, and a bilingual interactive dashboard (`EN / AR`) with one-click CRM CSV export.
 
-- Estimate the likelihood that a customer will make another purchase, if the data supports a defensible target and evaluation design.
-- Identify customers who may be at risk of not returning using an agreed, time-based definition of inactivity.
-- Analyze customer value using suitable measures supported by the dataset.
-- Provide evidence-based recommendations for customer retention and business decision-making.
+---
 
 ## 5. Dataset Overview
+- **Dataset Name:** Olist Brazilian E-Commerce Public Dataset
+- **Source:** `https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce`
+- **Validated Scale & Coverage:** All **9 relational CSV files** were verified (`99,441` total orders; **`98,666` qualifying orders** after excluding `canceled` and `unavailable` statuses; **`96,096` unique customers**; **`R$ 15.84M`** item revenue).
+- **Entity Grain Resolution:** Confirmed that `customer_id` is generated per order (`99,441` records), whereas **`customer_unique_id`** (`96,096` records) uniquely identifies individuals across repeat purchases and was enforced across all SQL queries and ML pipelines.
 
-Dataset name: Olist Brazilian E-Commerce Public Dataset.
-
-Source page: https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
-
-The dataset is a multi-table snapshot of Brazilian e-commerce orders and related entities. It is commonly described as covering roughly 100,000 orders placed between 2016 and 2018. The team must confirm exact record counts, date coverage, and available columns from its downloaded files before including these figures in final reporting.
-
-Important modeling note: customer_id generally identifies a customer record associated with an order, while customer_unique_id is intended to link repeat activity for the same underlying customer. Repeat-purchase analysis should investigate customer_unique_id rather than assuming customer_id alone identifies a person across orders.
-
-| olist_customers_dataset.csv | Customer records; includes customer_id and customer_unique_id |
+| File Name | Role in Pipeline |
 |---|---|
-| olist_orders_dataset.csv | Order status and timestamps |
-| olist_order_items_dataset.csv | Order items, product/seller references, price and freight |
-| olist_order_payments_dataset.csv | Payment information for orders |
-| olist_order_reviews_dataset.csv | Customer review information |
-| olist_products_dataset.csv | Product attributes and category |
-| olist_sellers_dataset.csv | Seller records |
-| olist_geolocation_dataset.csv | Brazilian ZIP-code geolocation data |
-| product_category_name_translation.csv | Portuguese-to-English product category translation |
+| `olist_customers_dataset.csv` | Maps per-order `customer_id` to persistent `customer_unique_id`, city, and state |
+| `olist_orders_dataset.csv` | Order statuses and 5 lifecycle timestamps (purchase, approval, carrier, customer delivery, estimated delivery) |
+| `olist_order_items_dataset.csv` | Line-item prices (`R$`), freight values, product IDs, and seller IDs |
+| `olist_order_payments_dataset.csv` | Payment methods (`credit_card`, `boleto`, `voucher`), installment counts, and payment totals |
+| `olist_order_reviews_dataset.csv` | 1–5 star customer satisfaction ratings and review comments |
+| `olist_products_dataset.csv` | Product dimensions, weight, and Portuguese category names |
+| `olist_sellers_dataset.csv` | Seller location attributes (city and state) |
+| `olist_geolocation_dataset.csv` | Brazilian ZIP-code prefix latitude/longitude coordinates |
+| `product_category_name_translation.csv` | Maps Portuguese product categories to standardized English names |
 
-These are the commonly supplied dataset components. Verify which files are present in the team's download; do not assume every file is included or complete.
+---
 
 ## 6. Data Validation and Preparation
+Implemented in `notebooks/01_data_validation_and_profiling.ipynb` and `notebooks/02_data_cleaning_and_eda.ipynb`:
+- **Schema & Cardinality Profiling:** Audited row counts, null percentages, duplicate records, and primary/foreign key integrity, exporting audit tables to `data/profiling_reports/`.
+- **Order Qualification Rule:** Excluded `canceled` and `unavailable` orders (`775` orders) to prevent distorted revenue and false repeat counts, retaining **`98,666` qualifying orders**.
+- **Standardization & Cleaning:** Parsed all timestamp columns, normalized city/state strings, imputed missing product dimensions with column medians, mapped English category translations, and deduplicated geolocation records by `geolocation_zip_code_prefix` using median coordinates.
+- **Reproducibility:** Raw files remain untouched in `data/raw/`, while cleaned relational tables are persisted to `data/cleaned/`.
 
-- Record actual file names, row counts, column counts, data types, and date coverage.
-- Inspect missing values, duplicates, invalid timestamps, unusual values, and key uniqueness.
-- Understand the grain of each table: customer, order, order item, payment, review, product, seller, or geolocation record.
-- Check join keys and relationship cardinalities before combining tables to avoid duplicated orders or inflated revenue.
-- Review order statuses and define which orders qualify for each metric.
-- Document the data dictionary, assumptions, limitations, license, and permitted use.
-- Keep raw data unchanged and make preparation reproducible through scripts or notebooks.
+---
 
-## 7. Business Definitions to Finalize
+## 7. Finalized Business Definitions
+- **Qualifying Order:** Any order in `orders_clean` where `order_status NOT IN ('canceled', 'unavailable')`.
+- **Point-in-Time Cutoff Date:** **`2018-03-01`**, selected to preserve a complete `180-day` forward observation window (`2018-03-01` to `2018-08-28`) prior to dataset end (`2018-09`), yielding **`52,013` eligible customers**.
+- **Repeat Purchase Target (`target_repeat_180d`):** Binary target (`1` if `customer_unique_id` placed `>= 1` qualifying order between `2018-03-01` and `2018-08-28`; `0` otherwise). Validated baseline repeat rate = **`1.14%`**.
+- **Customer Value & SLA Metrics (`src/business_metrics.sql`):** Defined SQL formulas for Qualifying Orders, Unique Customers, Total Item Revenue (`R$`), Total Freight (`R$`), Average Order Value (AOV), Historical Repeat Rate, RFM (`recency_days`, `frequency`, `monetary_total`), and Delivery Delay (`delay_vs_est_days`).
+- **Prediction Unit:** One row per `customer_unique_id` evaluated at snapshot date `2018-03-01` (`52,013` rows × `32` features in `data/cleaned/ml_customer_dataset.csv`).
 
-The following are proposed work items, not finalized definitions:
+---
 
-- Repeat purchase: a customer places a subsequent qualifying order after a defined cutoff date.
-- Customer at risk: a customer has not placed a qualifying order within a justified inactivity window. The window must be selected after examining the date range and purchase cadence.
-- Customer value: choose supported measures such as purchase frequency, recency, and qualifying order value; document treatment of canceled orders, freight, and payment records.
-- Business metrics: candidate measures include qualifying orders, repeat-customer rate, average order value, purchase frequency, recency, and revenue summaries. Exact formulas must be documented.
-- Prediction unit: define whether each modeling row represents a customer at a snapshot date or another unit.
+## 8. Machine Learning Approach & Validated Results
+Implemented in `src/build_ml_dataset.py` and `notebooks/03_ml_modeling_and_evaluation.ipynb`:
+- **Leakage Prevention:** Strictly filtered all historical features to `order_purchase_timestamp < '2018-03-01'` and verified via automated assertions in `tests/test_data_quality.py`.
+- **Temporal Holdout Split:** Sorted eligible customers chronologically by `last_purchase` using an **80% train (`41,610` customers) / 20% untouched temporal holdout test (`10,403` customers)** split.
+- **Model Comparison & Selection (`threshold = 0.60`):**
+  - **Champion — `LogisticRegression_balanced` (`C=0.1`, `class_weight='balanced'`):** Selected for superior ranking concentration and probability calibration, achieving **Top-1% Decile Lift = `3.33x`** over the `1.14%` baseline, **PR-AUC = `0.0170`**, **ROC-AUC = `0.5833`**, and **Recall@0.60 = `15.97%`**.
+  - **Challenger — `RandomForest_balanced` (`n_estimators=200`, `max_depth=8`, `class_weight='balanced'`):** Evaluated as a non-linear benchmark; outperformed by regularized logistic regression on temporal holdout ranking stability.
+- **Operational CRM Propensity Tiers (`models/customer_propensity_scores.csv`):**
+  - **High Propensity (Top 5% — `2,601` customers):** Mean repeat probability **`72.1%`** — priority VIP loyalty & personalized cross-sell offers.
+  - **Medium Propensity (Next 15% — `7,802` customers):** Mean repeat probability **`59.0%`** — automated win-back nudges & installment reminders.
+  - **Low Propensity (Bottom 80% — `41,610` customers):** Mean repeat probability **`42.6%`** — low-cost organic lifecycle touchpoints.
+- **Limitations:** Feature contributions indicate behavioral correlation (recency, frequency, satisfaction, delivery timeliness) rather than causal proof; campaign uplift requires A/B testing prior to full-scale budget rollout.
 
-## 8. Machine Learning Approach
-
-Machine learning is an explicit component of Custiq Force. The team will define a valid prediction target from the dataset, create customer-level features, train and compare suitable models, evaluate results, and interpret model behavior. The final target, model algorithms, and metrics will be chosen after dataset validation rather than assumed in advance.
-
-### Planned ML workflow
-
-1. Define the business question and prediction unit.
-2. Create a time-aware target and observation window, if supported by available timestamps.
-3. Build features using only information available at the prediction cutoff.
-4. Create a baseline model and then compare suitable alternatives.
-5. Evaluate on held-out data; consider a time-based split to reflect future use.
-6. Review errors, class balance, and metric trade-offs.
-7. Interpret predictions and document limitations before turning results into recommendations.
-
-### Potential evaluation metrics
-
-For a classification task, candidate metrics include precision, recall, F1-score, ROC-AUC, and a confusion matrix. The team should select metrics based on class balance and business priorities; accuracy alone may be misleading. Probability calibration may matter if predicted probabilities are used to prioritize customers.
-
-### Leakage and explainability
-
-Features must not contain information from after the prediction cutoff. Model interpretation can describe patterns and feature contributions, but feature importance does not prove causation. The final documentation should report the chosen method, evaluation results, limitations, and the meaning of predictions in business terms.
+---
 
 ## 9. Scope and Boundaries
+**Delivered Scope**
+- Dataset inspection, schema audit, and data dictionary (`docs/data_dictionary.md`).
+- Reproducible data cleaning and exploratory data analysis (`notebooks/02_data_cleaning_and_eda.ipynb`).
+- SQL business metric definitions (`src/business_metrics.sql`).
+- Point-in-time feature engineering (`src/build_ml_dataset.py`), ML modeling (`notebooks/03_ml_modeling_and_evaluation.ipynb`), and automated data-quality tests (`tests/test_data_quality.py`).
+- Interactive decision-support dashboard (`dashboard/app.py` and `dashboard/web_dashboard/index.html`).
+- Documented GitHub repository (`custiq-force/`).
 
-### Planned scope
+**Out of Scope**
+- Real-time production e-commerce ERP/CRM API integration.
+- Automated outbound email/SMS execution.
+- Causal uplift claims without randomized controlled experiments.
 
-- Dataset inspection and data dictionary.
-- Data cleaning and exploratory data analysis (EDA).
-- SQL queries and business metrics.
-- Machine-learning experiments, evaluation, and interpretation.
-- Streamlit dashboard for selected metrics, analyses, model outputs, and recommendations.
-- GitHub repository with documented code, workflow, and project files.
-
-### Out of scope unless approved later
-
-- Live integration with a production e-commerce platform.
-- Automated marketing campaigns or direct customer messaging.
-- Claims that recommendations cause business improvements without an appropriate experiment.
-- Predictions or features unsupported by the available data.
+---
 
 ## 10. Team Structure and Responsibilities
-
-Task ownership identifies each member's primary responsibility, not isolated work. The team will learn together and review code, assumptions, and results across stages.
-
-| Mohanned Mohammed Galal | Project Lead; SQL, Business Metrics, GitHub coordination |
+| Team Member | Primary Workstream & Deliverables |
 |---|---|
-| Shahd Magdy Abdelwahd | Dataset preparation and database setup |
-| Marwa Elbadawy Mohammed | Data cleaning, EDA, customer behavior analysis |
-| Yassin Hassan Abdelkader | Machine learning, model evaluation, and interpretation |
-| Mohammed Atef Mosa | Streamlit dashboard, results, and recommendations |
+| **Mohanned Mohammed Galal** | Project Lead; SQL queries (`src/business_metrics.sql`), Business Metrics & GitHub coordination |
+| **Shahd Magdy Abdelwahd** | Dataset preparation, schema profiling (`notebooks/01_data_validation_and_profiling.ipynb`) & data dictionary |
+| **Marwa Elbadawy Mohammed** | Data cleaning, geolocation deduplication & EDA (`notebooks/02_data_cleaning_and_eda.ipynb`) |
+| **Yassin Hassan Abdelkader** | Temporal feature store (`src/build_ml_dataset.py`), ML modeling & evaluation (`notebooks/03_ml_modeling_and_evaluation.ipynb`) |
+| **Mohammed Atef Mosa** | Interactive dashboard (`dashboard/app.py` & `dashboard/web_dashboard/index.html`), CRM segmentation & recommendations |
 
-## 11. Proposed End-to-End Workflow
+---
 
-1. Inventory dataset files and review source/license conditions.
-2. Understand table grain, columns, keys, date coverage, and business context.
-3. Design the relational database and load appropriate tables into MySQL, if suitable.
-4. Perform data quality checks, cleaning, and EDA using Python, Pandas, Matplotlib, and Seaborn.
-5. Create customer-level features and business metrics with SQL/Python; document formulas.
-6. Define repeat-purchase and at-risk targets using time-aware logic where feasible.
-7. Train a baseline machine-learning model and compare appropriate alternatives.
-8. Evaluate and interpret model results; record limitations.
-9. Build the Streamlit dashboard and connect it to validated analysis outputs.
-10. Review the complete workflow, document setup instructions, and prepare the final presentation.
+## 11. Executed End-to-End Workflow
+1. **Schema & Grain Validation:** Verified all 9 Olist CSV files and key cardinalities in `01_data_validation_and_profiling.ipynb`.
+2. **Data Cleaning & EDA:** Standardized tables, filtered canceled/unavailable orders, and analyzed revenue/SLA patterns in `02_data_cleaning_and_eda.ipynb`.
+3. **SQL Business Metrics:** Authored reusable queries for qualifying orders, revenue, repeat rate, and RFM snapshots in `src/business_metrics.sql`.
+4. **Point-in-Time Feature Engineering:** Built the 32-feature customer matrix at cutoff `2018-03-01` via `src/build_ml_dataset.py`.
+5. **Model Training & Scoring:** Trained `LogisticRegression_balanced` vs. `RandomForest_balanced` on an 80/20 temporal split, saved `models/repeat_purchase_model.joblib`, and scored all `52,013` customers in `03_ml_modeling_and_evaluation.ipynb`.
+6. **Automated Quality Verification:** Validated zero leakage (`last_purchase < 2018-03-01`) and valid score bounds via `pytest tests/`.
+7. **Dashboard Delivery:** Deployed the bilingual decision-support portal via `dashboard/app.py` and `dashboard/web_dashboard/index.html`.
+
+---
 
 ## 12. Technology Stack
-
-| Python | Data analysis, feature engineering, and modeling |
+| Tool / Library | Role in Project |
 |---|---|
-| Pandas | Tabular data loading and transformation |
-| SQL / MySQL | Data querying, joins, and business metrics |
-| Scikit-learn | Model pipelines, training, and evaluation |
-| Matplotlib / Seaborn | Exploratory and explanatory visualizations |
-| Streamlit | Interactive dashboard |
-| GitHub | Version control, collaboration, issues, and documentation |
+| **Python 3.10+** | Core programming language for ETL, feature engineering, modeling, and testing |
+| **Pandas & NumPy** | Relational data wrangling, temporal aggregations, and feature matrix construction |
+| **SQL** | Business KPI definitions, repeat-rate cohort queries, and RFM extraction (`src/business_metrics.sql`) |
+| **Scikit-learn & Joblib** | Preprocessing pipelines (`ColumnTransformer`), model training, evaluation, and model serialization |
+| **Matplotlib & Seaborn** | Exploratory data analysis and diagnostic visualizations |
+| **Streamlit & HTML/JS/SVG** | Interactive dashboard entrypoint (`dashboard/app.py`) and standalone bilingual web portal (`dashboard/web_dashboard/index.html`) |
+| **Pytest & Jupyter** | Automated leakage/schema unit testing and reproducible analytical notebooks |
+| **GitHub** | Version control, collaboration, and project documentation |
 
-## 13. Dashboard Plan
+---
 
-The Streamlit dashboard is planned to present a selected subset of validated outputs. Candidate views include overall order/customer metrics, repeat-purchase patterns, customer value analysis, at-risk customer indicators, model evaluation, and recommendations. Final pages and filters will be decided after the dataset and analysis are understood.
+## 13. Dashboard Architecture & Views
+Delivered as both a **Streamlit application** (`streamlit run dashboard/app.py`) and a **standalone interactive web portal** (`dashboard/web_dashboard/index.html`) supporting **English and Arabic (`EN / AR`)**:
+- **Executive KPI Overview:** Qualifying orders (`98,666`), unique customers (`96,096`), item revenue (`R$ 15.84M`), baseline 180-day repeat rate (`1.14%`), and Top-1% decile lift (`3.33x`).
+- **Propensity Tier Breakdown:** Visualizes customer counts and mean repeat probabilities across High (`5%`), Medium (`15%`), and Low (`80%`) propensity tiers.
+- **Model Diagnostics:** Displays temporal holdout comparison metrics (`PR-AUC`, `ROC-AUC`, `Recall@0.60`, `Top-1% Lift`).
+- **Interactive Filtering & CRM Export:** Allows filtering customer cohorts by Brazilian state and propensity tier with one-click CSV export for marketing execution.
 
-## 14. GitHub and Collaboration
+---
 
-- Keep a README with project purpose, dataset source, setup instructions, and current status.
-- Use a clear folder structure for data notes, notebooks, source code, dashboard, and documentation.
-- Do not commit credentials or private information. Check dataset redistribution terms before uploading raw data.
-- Use descriptive commits and review changes before merging into the main branch.
-- Track decisions, unresolved questions, and task ownership in GitHub Issues or a shared task board.
-
+## 14. Repository Structure
 ```text
-custiq-force/\n├── README.md\n├── docs/\n│   ├── project_documentation.md\n│   └── data_dictionary.md\n├── data/\n│   └── README.md\n├── notebooks/\n├── src/\n├── dashboard/\n├── tests/\n└── requirements.txt
-```
-
-## 15. Risks and Mitigations
-
-| Risk | Mitigation |
-|---|---|
-| Customer identity confusion | Validate customer_unique_id for customer-level repeat behavior. |
-| Data leakage | Define a prediction cutoff; exclude future-derived features; use time-based evaluation where feasible. |
-| Join duplication | Document table grain and test row counts and key cardinalities after joins. |
-| Ambiguous churn definition | Agree on and justify an inactivity window; state that it is a project definition. |
-| Class imbalance | Inspect target distribution and report metrics beyond accuracy. |
-| Overstated recommendations | Separate prediction/correlation from causation and document limitations. |
-| Scope creep | Prioritize a working end-to-end baseline before optional features. |
-
-## 16. Deliverables
-
-- Dataset inventory and data dictionary.
-- Reproducible data preparation and EDA outputs.
-- SQL queries and documented business metric definitions.
-- Machine-learning model(s), evaluation results, and interpretation.
-- Streamlit dashboard.
-- GitHub repository with README and setup instructions.
-- Final presentation and project documentation.
-
-## 17. Timeline and Milestones
-
-Submission date supplied by the team: 6 December 2026. Intermediate dates have not been supplied, so milestones are listed without invented deadlines.
-
-1. Dataset validation and project scope confirmation.
-2. Database setup and data preparation.
-3. EDA and business metric definitions.
-4. Target definition, feature engineering, baseline modeling, and evaluation.
-5. Dashboard development and integration.
-6. Testing, documentation review, and final presentation.
-
-## 18. Open Decisions
-
-- Confirm exact downloaded files and row counts.
-- Confirm whether Custiq Force is the final project name.
-- Define qualifying order statuses and treatment of canceled/unavailable orders.
-- Choose prediction cutoff, future window, and repeat-purchase definition.
-- Choose and justify the inactivity window for identifying customers at risk.
-- Finalize customer value formula and business metric definitions.
-- Select model candidates and evaluation metrics after inspecting the target.
-- Confirm GitHub repository URL and whether raw data may be shared.
-
-## 19. Conclusion
-
-Custiq Force will use the Olist Brazilian E-Commerce Public Dataset as the starting point for a collaborative Data Science workflow. Machine learning is a core part of the project alongside SQL, business analysis, data preparation, and dashboard development. The project will prioritize data understanding, valid business definitions, careful evaluation, and clear recommendations. Final conclusions will be added only after the team analyzes the actual data.
-
+custiq-force/
+├── README.md
+├── requirements.txt
+├── docs/
+│   ├── project_documentation.md                  # Final project report & methodology
+│   └── data_dictionary.md                        # Schema definitions & metric formulas
+├── data/
+│   ├── raw/                                      # Original 9 Olist CSV files
+│   ├── cleaned/                                  # Standardized relational tables & ML dataset
+│   └── profiling_reports/                        # Automated table & column audit reports
+├── notebooks/
+│   ├── 01_data_validation_and_profiling.ipynb    # Schema audit & PK/FK cardinality checks
+│   ├── 02_data_cleaning_and_eda.ipynb            # Cleaning, geo deduplication & EDA
+│   └── 03_ml_modeling_and_evaluation.ipynb       # Temporal holdout training & scoring
+├── src/
+│   ├── build_ml_dataset.py                       # Point-in-time feature store (2018-03-01 cutoff)
+│   └── business_metrics.sql                      # SQL definitions for GMV, RFM & repeat rate
+├── models/                                       # Saved .joblib model, metrics & propensity scores
+├── dashboard/
+│   ├── app.py                                    # Streamlit dashboard entrypoint
+│   └── web_dashboard/
+│       └── index.html                            # Interactive bilingual dashboard (EN / AR)
+└── tests/
+    └── test_data_quality.py                      # Automated leakage & score range checks
