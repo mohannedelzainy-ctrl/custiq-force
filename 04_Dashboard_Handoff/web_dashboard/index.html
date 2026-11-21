@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CustIQ Force — Customer Repeat Propensity Dashboard</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #273549;
+    --border: #334155;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --high: #10b981;
+    --med: #f59e0b;
+    --low: #64748b;
+    --danger: #ef4444;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overflow-x: hidden;
+    line-height: 1.5;
+  }
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 24px;
+    margin-bottom: 20px;
+  }
+  .brand h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .badge {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    font-size: 0.75rem;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .brand p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  select, input[type="text"], button {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    outline: none;
+  }
+  select:focus, input[type="text"]:focus {
+    border-color: var(--primary);
+  }
+  button.btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.btn-primary:hover { background: var(--primary-hover); }
+  button.btn-ghost {
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button.btn-ghost:hover { background: #334155; }
+
+  /* KPI Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    min-width: 0;
+  }
+  .kpi-label {
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .kpi-value {
+    font-size: 1.55rem;
+    font-weight: 700;
+    margin: 6px 0 4px;
+    color: #fff;
+  }
+  .kpi-sub {
+    font-size: 0.78rem;
+    color: #34d399;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+  .tab-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .tab-btn:hover { color: #fff; background: var(--surface); }
+  .tab-btn.active {
+    background: var(--primary);
+    color: #fff;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Grid Cards */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 540px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    min-width: 0;
+  }
+  .card h2 {
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+  }
+  .card p.desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .svg-box {
+    width: 100%;
+    direction: ltr;
+    overflow: hidden;
+  }
+  svg.chart-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    direction: ltr;
+  }
+
+  /* Tables */
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  th, td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: start;
+    white-space: nowrap;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--muted);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .pill-high { background: rgba(16,185,129,0.2); color: #34d399; }
+  .pill-med { background: rgba(245,158,11,0.2); color: #fbbf24; }
+  .pill-low { background: rgba(100,116,139,0.25); color: #cbd5e1; }
+
+  /* Floating Tooltip */
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: #0b1120;
+    border: 1px solid #475569;
+    color: #f8fafc;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    z-index: 9999;
+    display: none;
+    max-width: 260px;
+  }
+</style>
+</head>
+<body>
+<div id="tooltip"></div>
+<div class="container">
+  <header>
+    <div class="brand">
+      <h1>
+        <span data-i18n="title">CustIQ Force — Customer Repeat Propensity</span>
+        <span class="badge">Olist E-Commerce • ML Analytics</span>
+      </h1>
+      <p data-i18n="subtitle">Snapshot: 2018-03-01 | Prediction Window: 180 Days (up to 2018-08-28) | Champion Model: LogisticRegression_balanced</p>
+    </div>
+    <div class="controls">
+      <select id="stateFilter" aria-label="State Filter">
+        <option value="ALL">All States (27)</option>
+      </select>
+      <select id="segFilter" aria-label="Segment Filter">
+        <option value="ALL">All Segments</option>
+        <option value="High (top 5%)">High (top 5%)</option>
+        <option value="Medium (next 15%)">Medium (next 15%)</option>
+        <option value="Low (bottom 80%)">Low (bottom 80%)</option>
+      </select>
+      <button class="btn-ghost" id="langToggle">عربي / EN</button>
+      <button class="btn-primary" id="exportCsvBtn" data-i18n="export">Export Filtered CSV</button>
+    </div>
+  </header>
+
+  <!-- KPI Cards -->
+  <section class="kpi-grid" id="kpiGrid"></section>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="overview" data-i18n="tab_overview">1. Executive Overview</button>
+    <button class="tab-btn" data-tab="geo" data-i18n="tab_geo">2. Geographic & Cities</button>
+    <button class="tab-btn" data-tab="model" data-i18n="tab_model">3. ML Model Evaluation</button>
+    <button class="tab-btn" data-tab="payments" data-i18n="tab_payments">4. Payments & Reviews</button>
+    <button class="tab-btn" data-tab="customers" data-i18n="tab_customers">5. Target Customers</button>
+  </nav>
+
+  <!-- TAB 1: OVERVIEW -->
+  <div id="tab-overview" class="tab-panel active">
+    <div class="grid-2">
+      <div class="card">
+        <h2 data-i18n="seg_title">Propensity Segmentation Breakdown</h2>
+        <p class="desc" data-i18n="seg_desc">52,013 eligible customers stratified into High (top 5%), Medium (next 15%), and Low (bottom 80%).</p>
+        <div class="svg-box" id="donutChart"></div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="hist_title">Predicted Repeat Probability Distribution</h2>
+        <p class="desc" data-i18n="hist_desc">Histogram across 10 probability bins with Operating Threshold line at 0.60.</p>
+        <div class="svg-box" id="histChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: GEO -->
+  <div id="tab-geo" class="tab-panel">
+    <div class="grid-2">
+      <div class="card">
+        <h2 data-i18n="geo_state_title">Top 15 Brazilian States by Customer Volume</h2>
+        <p class="desc" data-i18n="geo_state_desc">Click any bar to filter the dashboard by that state.</p>
+        <div class="svg-box" id="stateBarChart"></div>
+      </div>
+      <div class="card">
+        <h2 id="cityCardTitle" data-i18n="geo_city_title">Top Cities Breakdown</h2>
+        <p class="desc" data-i18n="geo_city_desc">Customer count and average repeat propensity probability by city.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>State</th>
+                <th>City</th>
+                <th>Customers</th>
+                <th>Avg Repeat Prob</th>
+              </tr>
+            </thead>
+            <tbody id="cityTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: MODEL -->
+  <div id="tab-model" class="tab-panel">
+    <div class="grid-2">
+      <div class="card">
+        <h2 data-i18n="mod_title">Champion vs. Challenger Model Comparison</h2>
+        <p class="desc" data-i18n="mod_desc">Evaluated on 10,403 temporal holdout test customers (base repeat rate = 1.14%).</p>
+        <div class="svg-box" id="modelChart"></div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="mod_table_title">Detailed Validation Metrics (Threshold = 0.60)</h2>
+        <p class="desc" data-i18n="mod_table_desc">LogisticRegression_balanced achieves 3.33x lift in the top 1% segment.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Status</th>
+                <th>PR-AUC</th>
+                <th>ROC-AUC</th>
+                <th>Precision@0.6</th>
+                <th>Recall@0.6</th>
+                <th>F1@0.6</th>
+              </tr>
+            </thead>
+            <tbody id="modelTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: PAYMENTS & REVIEWS -->
+  <div id="tab-payments" class="tab-panel">
+    <div class="grid-2">
+      <div class="card">
+        <h2 data-i18n="pay_title">Payment Methods by Total Revenue (BRL)</h2>
+        <p class="desc" data-i18n="pay_desc">Total payment volume across 103,886 transactions (R$ 16.01M).</p>
+        <div class="svg-box" id="paymentChart"></div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="rev_title">Customer Review Score Distribution (1–5 Stars)</h2>
+        <p class="desc" data-i18n="rev_desc">99,224 verified order reviews with an overall mean rating of 4.09 / 5.00.</p>
+        <div class="svg-box" id="reviewChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: CUSTOMERS -->
+  <div id="tab-customers" class="tab-panel">
+    <div class="card">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;">
+        <div>
+          <h2 data-i18n="cust_title">Actionable High-Propensity & Sampled Customer Directory</h2>
+          <p class="desc" style="margin-bottom:0;" data-i18n="cust_desc">Search by Customer ID, City, or State and export directly for CRM retention campaigns.</p>
+        </div>
+        <input type="text" id="custSearch" placeholder="Search ID, city, state..." />
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Customer Unique ID</th>
+              <th>State</th>
+              <th>City</th>
+              <th>Repeat Probability</th>
+              <th>Percentile</th>
+              <th>Segment</th>
+            </tr>
+          </thead>
+          <tbody id="custTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = {"kpis": {"eligible_customers": 52013, "total_customers_table": 96096, "total_orders_in_items": 98666, "total_item_revenue_all": 15843553.24, "total_payments_value_all": 16008872.12, "avg_order_value_all_items": 160.58, "avg_review_score": 4.09, "total_reviews": 99224, "snapshot_date": "2018-03-01", "label_window_end": "2018-08-28", "test_positive_rate_pct": 1.14, "top1_lift": 3.33}, "segments": [{"propensity_segment": "High (top 5%)", "count": 2601, "avg_prob": 0.7210833153485452, "min_prob": 0.642036047889658, "max_prob": 0.9976510138236576}, {"propensity_segment": "Low (bottom 80%)", "count": 41610, "avg_prob": 0.42631190600409363, "min_prob": 2.500295994998002e-07, "max_prob": 0.5543153979136136}, {"propensity_segment": "Medium (next 15%)", "count": 7802, "avg_prob": 0.5903762733962957, "min_prob": 0.5543236213462378, "max_prob": 0.6420286674755873}], "states": [{"customer_state": "SP", "total_customers": 21067, "avg_prob": 0.5129633103121346, "high_count": 1426, "med_count": 4711, "low_count": 14930}, {"customer_state": "RJ", "total_customers": 6888, "avg_prob": 0.490919748245613, "high_count": 384, "med_count": 1055, "low_count": 5449}, {"customer_state": "MG", "total_customers": 6317, "avg_prob": 0.46167163243801573, "high_count": 212, "med_count": 664, "low_count": 5441}, {"customer_state": "RS", "total_customers": 2962, "avg_prob": 0.5062896963590002, "high_count": 179, "med_count": 576, "low_count": 2207}, {"customer_state": "PR", "total_customers": 2653, "avg_prob": 0.458696697030021, "high_count": 88, "med_count": 253, "low_count": 2312}, {"customer_state": "SC", "total_customers": 1981, "avg_prob": 0.37892742695564136, "high_count": 30, "med_count": 37, "low_count": 1914}, {"customer_state": "BA", "total_customers": 1754, "avg_prob": 0.3891035566587583, "high_count": 29, "med_count": 42, "low_count": 1683}, {"customer_state": "ES", "total_customers": 1104, "avg_prob": 0.358280793373392, "high_count": 15, "med_count": 13, "low_count": 1076}, {"customer_state": "GO", "total_customers": 1091, "avg_prob": 0.518322644523677, "high_count": 94, "med_count": 250, "low_count": 747}, {"customer_state": "DF", "total_customers": 1055, "avg_prob": 0.29753535793824487, "high_count": 9, "med_count": 7, "low_count": 1039}, {"customer_state": "PE", "total_customers": 856, "avg_prob": 0.34907800026359054, "high_count": 9, "med_count": 10, "low_count": 837}, {"customer_state": "CE", "total_customers": 715, "avg_prob": 0.24775472017084452, "high_count": 3, "med_count": 4, "low_count": 708}, {"customer_state": "PA", "total_customers": 546, "avg_prob": 0.42174931623036926, "high_count": 8, "med_count": 24, "low_count": 514}, {"customer_state": "MT", "total_customers": 491, "avg_prob": 0.3787427929240053, "high_count": 11, "med_count": 9, "low_count": 471}, {"customer_state": "MA", "total_customers": 430, "avg_prob": 0.37164587541026073, "high_count": 7, "med_count": 3, "low_count": 420}, {"customer_state": "MS", "total_customers": 365, "avg_prob": 0.3732111270102573, "high_count": 4, "med_count": 12, "low_count": 349}, {"customer_state": "PB", "total_customers": 285, "avg_prob": 0.22683693369513178, "high_count": 2, "med_count": 0, "low_count": 283}, {"customer_state": "RN", "total_customers": 272, "avg_prob": 0.21250418014755879, "high_count": 1, "med_count": 1, "low_count": 270}, {"customer_state": "PI", "total_customers": 264, "avg_prob": 0.023941274409507527, "high_count": 0, "med_count": 0, "low_count": 264}, {"customer_state": "AL", "total_customers": 225, "avg_prob": 0.26659114487364594, "high_count": 2, "med_count": 0, "low_count": 223}, {"customer_state": "SE", "total_customers": 206, "avg_prob": 0.47034120388097517, "high_count": 7, "med_count": 29, "low_count": 170}, {"customer_state": "RO", "total_customers": 146, "avg_prob": 0.34380278227071515, "high_count": 8, "med_count": 2, "low_count": 136}, {"customer_state": "TO", "total_customers": 145, "avg_prob": 0.6142420460219853, "high_count": 60, "med_count": 54, "low_count": 31}, {"customer_state": "AM", "total_customers": 78, "avg_prob": 0.5237344010774405, "high_count": 2, "med_count": 28, "low_count": 48}, {"customer_state": "AC", "total_customers": 57, "avg_prob": 0.5567800387151093, "high_count": 11, "med_count": 18, "low_count": 28}, {"customer_state": "AP", "total_customers": 40, "avg_prob": 0.08491565705473317, "high_count": 0, "med_count": 0, "low_count": 40}, {"customer_state": "RR", "total_customers": 20, "avg_prob": 0.11602846484066812, "high_count": 0, "med_count": 0, "low_count": 20}], "model_metrics": [{"model": "LogisticRegression_balanced", "selected": true, "operating_threshold": 0.6, "average_precision_pr_auc": 0.0169577765792464, "roc_auc": 0.583327613425767, "precision_at_threshold": 0.0180436847103513, "recall_at_threshold": 0.1596638655462184, "f1_at_threshold": 0.0324232081911262, "test_positive_rate": 0.0114390079784677, "test_rows": 10403}, {"model": "RandomForest_balanced", "selected": false, "operating_threshold": 0.6, "average_precision_pr_auc": 0.0159990949688038, "roc_auc": 0.5701240239386303, "precision_at_threshold": 0.0, "recall_at_threshold": 0.0, "f1_at_threshold": 0.0, "test_positive_rate": 0.0114390079784677, "test_rows": 10403}], "payments": [{"payment_type": "credit_card", "transactions": 76795, "total_value": 12542084.19, "avg_installments": 3.507155413763917}, {"payment_type": "boleto", "transactions": 19784, "total_value": 2869361.27, "avg_installments": 1.0}, {"payment_type": "voucher", "transactions": 5775, "total_value": 379436.87, "avg_installments": 1.0}, {"payment_type": "debit_card", "transactions": 1529, "total_value": 217989.79, "avg_installments": 1.0}, {"payment_type": "not_defined", "transactions": 3, "total_value": 0.0, "avg_installments": 1.0}], "reviews": [{"review_score": 1, "count": 11424}, {"review_score": 2, "count": 3151}, {"review_score": 3, "count": 8179}, {"review_score": 4, "count": 19142}, {"review_score": 5, "count": 57328}], "prob_histogram": [{"prob_bin": "0.0-0.1", "count": 475}, {"prob_bin": "0.1-0.2", "count": 818}, {"prob_bin": "0.2-0.3", "count": 3131}, {"prob_bin": "0.3-0.4", "count": 8429}, {"prob_bin": "0.4-0.5", "count": 18955}, {"prob_bin": "0.5-0.6", "count": 14892}, {"prob_bin": "0.6-0.7", "count": 4140}, {"prob_bin": "0.7-0.8", "count": 726}, {"prob_bin": "0.8-0.9", "count": 331}, {"prob_bin": "0.9-1.0", "count": 116}], "customers": [{"customer_unique_id": "4546caea018ad8c692964e3382debd19", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9976510138236576, "propensity_percentile": 1.0, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "b8b3c435a58aebd788a477bed8342910", "customer_state": "RS", "customer_city": "arroio do sal", "predicted_repeat_probability": 0.9966265825913968, "propensity_percentile": 0.99998077403726, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "dc813062e0fc23409cd255f7f53c7074", "customer_state": "PE", "customer_city": "garanhuns", "predicted_repeat_probability": 0.99484897479827, "propensity_percentile": 0.99996154807452, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "b39dde6dd619943190a8cc9aa6db38a4", "customer_state": "SP", "customer_city": "sao bernardo do campo", "predicted_repeat_probability": 0.994742794880114, "propensity_percentile": 0.9999423221117798, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "63cfc61cee11cbe306bff5857d00bfe4", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9933374561678296, "propensity_percentile": 0.9999230961490396, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "1b6c7548a2a1f9037c1fd3ddfed95f33", "customer_state": "MG", "customer_city": "ituiutaba", "predicted_repeat_probability": 0.9889502370787748, "propensity_percentile": 0.9999038701862996, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "1f98e3467d2b48dfb44fc12b137d3447", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9871966899239728, "propensity_percentile": 0.9998846442235596, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "8d50f5eadf50201ccdcedfb9e2ac8455", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9871480143672756, "propensity_percentile": 0.9998654182608194, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "11f97da02237a49c8e783dfda6f50e8e", "customer_state": "GO", "customer_city": "goiania", "predicted_repeat_probability": 0.9870130564005214, "propensity_percentile": 0.9998461922980794, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "3e43e6105506432c953e165fb2acf44c", "customer_state": "SP", "customer_city": "praia grande", "predicted_repeat_probability": 0.9828717296220032, "propensity_percentile": 0.9998269663353392, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "f0e310a6839dce9de1638e0fe5ab282a", "customer_state": "ES", "customer_city": "vitoria", "predicted_repeat_probability": 0.9815503125915536, "propensity_percentile": 0.9998077403725992, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0f5ac8d5c31de21d2f25e24be15bbffb", "customer_state": "PR", "customer_city": "uniao da vitoria", "predicted_repeat_probability": 0.9782957169402664, "propensity_percentile": 0.999788514409859, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "976a39626eb2337ee3258d4ad73f1543", "customer_state": "RS", "customer_city": "porto alegre", "predicted_repeat_probability": 0.9765006907521696, "propensity_percentile": 0.999769288447119, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "35ecdf6858edc6427223b64804cf028e", "customer_state": "MA", "customer_city": "sao luis", "predicted_repeat_probability": 0.9744225940816812, "propensity_percentile": 0.9997500624843788, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6e26bbeaa107ec34112c64e1ee31c0f5", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9742404795332936, "propensity_percentile": 0.9997308365216389, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "da2b78576894a7f95d45bfd20250cc54", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.973783390396741, "propensity_percentile": 0.9997116105588988, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "4e65032f1f574189fb793bac5a867bbc", "customer_state": "SP", "customer_city": "sao caetano do sul", "predicted_repeat_probability": 0.9699363693505272, "propensity_percentile": 0.9996923845961586, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "47c1a3033b8b77b3ab6e109eb4d5fdf3", "customer_state": "SP", "customer_city": "jandira", "predicted_repeat_probability": 0.966046105197856, "propensity_percentile": 0.9996731586334184, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "2fe074ea3cc24b8fd57d29effc995f8b", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9653196826297747, "propensity_percentile": 0.9996539326706784, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "74cb1ad7e6d5674325c1f99b5ea30d82", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9643690380919224, "propensity_percentile": 0.9996347067079384, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "60e6fe581610db699ac03fec61f4d53f", "customer_state": "MG", "customer_city": "belo horizonte", "predicted_repeat_probability": 0.96347673284604, "propensity_percentile": 0.9996154807451983, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "a7657330b1c135f3acd420326e335b2c", "customer_state": "MG", "customer_city": "coromandel", "predicted_repeat_probability": 0.9633798850203203, "propensity_percentile": 0.9995962547824584, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "e30b83af13d6ff0b0f427b2a67c43b39", "customer_state": "MG", "customer_city": "pocos de caldas", "predicted_repeat_probability": 0.9631740536358796, "propensity_percentile": 0.999577028819718, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6469f99c1f9dfae7733b25662e7f1782", "customer_state": "SP", "customer_city": "santos", "predicted_repeat_probability": 0.9610968522004713, "propensity_percentile": 0.999557802856978, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "fd03997c82649affc061d275ddf1f3d9", "customer_state": "ES", "customer_city": "serra", "predicted_repeat_probability": 0.9599797435487576, "propensity_percentile": 0.999538576894238, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "21bde4e982c4681021edabb899bcebfe", "customer_state": "MG", "customer_city": "patos de minas", "predicted_repeat_probability": 0.9597159235191088, "propensity_percentile": 0.999519350931498, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ecdbc4bf2201c807294c7d8c4b777032", "customer_state": "SP", "customer_city": "indaiatuba", "predicted_repeat_probability": 0.9588838508212788, "propensity_percentile": 0.9995001249687578, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "698e1cf81d01a3d389d96145f7fa6df8", "customer_state": "GO", "customer_city": "goiania", "predicted_repeat_probability": 0.9587400730297184, "propensity_percentile": 0.9994808990060178, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "32ea3bdedab835c3aa6cb68ce66565ef", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9572844558657178, "propensity_percentile": 0.9994616730432776, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "de34b16117594161a6a89c50b289d35a", "customer_state": "SP", "customer_city": "santo andre", "predicted_repeat_probability": 0.955822972814749, "propensity_percentile": 0.9994424470805376, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "18e3d276253780b44b5b7bf83f6785ec", "customer_state": "SP", "customer_city": "guaruja", "predicted_repeat_probability": 0.9549588629745576, "propensity_percentile": 0.9994232211177976, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "a0abd26659c9914690cbd3320d39fd96", "customer_state": "RS", "customer_city": "canoas", "predicted_repeat_probability": 0.9528733698510188, "propensity_percentile": 0.9994039951550574, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "4962136f755981b83b03f476e66eea7d", "customer_state": "SC", "customer_city": "gaspar", "predicted_repeat_probability": 0.9523132247732266, "propensity_percentile": 0.9993847691923172, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "071fb07419a29c8ba143831082e0320a", "customer_state": "SP", "customer_city": "barueri", "predicted_repeat_probability": 0.9521022474771312, "propensity_percentile": 0.9993655432295772, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "da1e7179b9c5a1494d78528cbcf05aa0", "customer_state": "SC", "customer_city": "chapeco", "predicted_repeat_probability": 0.950712426056194, "propensity_percentile": 0.9993463172668372, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "75c7cb4037146f5c8e95ade4214396c5", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9506877548816972, "propensity_percentile": 0.999327091304097, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "69e4074cb5368c1539397e4ea570757a", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9503015507323064, "propensity_percentile": 0.999307865341357, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "580561d937f063a0c4ffe1e4832df2f5", "customer_state": "PR", "customer_city": "dois vizinhos", "predicted_repeat_probability": 0.948747188534044, "propensity_percentile": 0.9992886393786168, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "8f6ce2295bdbec03cd50e34b4bd7ba0a", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9480591707631938, "propensity_percentile": 0.9992694134158768, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "1fbd81e4d0a0cf9125ca038b43533b7f", "customer_state": "RJ", "customer_city": "cantagalo", "predicted_repeat_probability": 0.9478938459229312, "propensity_percentile": 0.9992501874531368, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "a1044dd75b74fbc485b040575a14acf0", "customer_state": "SP", "customer_city": "cerqueira cesar", "predicted_repeat_probability": 0.946855837022016, "propensity_percentile": 0.9992309614903966, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "3db6e5afa8e8178a29afc729855315e2", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9467987290669404, "propensity_percentile": 0.9992117355276564, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "f34cd7fd85a1f8baff886edf09567be3", "customer_state": "SC", "customer_city": "pomerode", "predicted_repeat_probability": 0.9456425065994752, "propensity_percentile": 0.9991925095649165, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6bb535b0906b43e0041916897667aeed", "customer_state": "SC", "customer_city": "garopaba", "predicted_repeat_probability": 0.9452331344489108, "propensity_percentile": 0.9991732836021764, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "3e5306add1209e5ba184092dd1587282", "customer_state": "DF", "customer_city": "brasilia", "predicted_repeat_probability": 0.9448833487296971, "propensity_percentile": 0.9991540576394364, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ae53a87a257f8e54795af6ff434e443b", "customer_state": "BA", "customer_city": "camamu", "predicted_repeat_probability": 0.9431368531837274, "propensity_percentile": 0.9991348316766964, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0abee71cd257861a0944e2a81cea4a50", "customer_state": "RJ", "customer_city": "campos dos goytacazes", "predicted_repeat_probability": 0.9427512413805604, "propensity_percentile": 0.999115605713956, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ce9f8b9c31d83341764708396ac7e38b", "customer_state": "MG", "customer_city": "juiz de fora", "predicted_repeat_probability": 0.942482681715223, "propensity_percentile": 0.999096379751216, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "8689b3e15d4b16cfd05ecf597a523453", "customer_state": "MG", "customer_city": "timoteo", "predicted_repeat_probability": 0.9424341090335022, "propensity_percentile": 0.999077153788476, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0942eedfe0e865b2a80419a14672286f", "customer_state": "MG", "customer_city": "barbacena", "predicted_repeat_probability": 0.941766619728566, "propensity_percentile": 0.999057927825736, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "10b58cbd6607267fd41812614367439e", "customer_state": "MG", "customer_city": "caratinga", "predicted_repeat_probability": 0.9405754226325406, "propensity_percentile": 0.9990387018629958, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "4bbaf6f7a10a7e26a8777aa5cb6d5864", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9405425944131512, "propensity_percentile": 0.9990194759002556, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0f9349a9da479b7e02c4cb4a0c73fb47", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.937371186435978, "propensity_percentile": 0.9990002499375156, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "5e8f38a9a1c023f3db718edcf926a2db", "customer_state": "BA", "customer_city": "feira de santana", "predicted_repeat_probability": 0.935454784299459, "propensity_percentile": 0.9989810239747756, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "9bb5ee90bbf9e5dec4a866a9d1117328", "customer_state": "SP", "customer_city": "santana de parnaiba", "predicted_repeat_probability": 0.9348470409992408, "propensity_percentile": 0.9989617980120354, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "efb164704e9f4fc3867f6f59f5f6dbd6", "customer_state": "PR", "customer_city": "curitiba", "predicted_repeat_probability": 0.933727639281894, "propensity_percentile": 0.9989425720492954, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "69aab61687fa416ef601af332bd0ff0d", "customer_state": "SP", "customer_city": "mongagua", "predicted_repeat_probability": 0.9335768150415926, "propensity_percentile": 0.9989233460865552, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "7828a4a1ee004bbe6665cbffbc4bf2d9", "customer_state": "SP", "customer_city": "boituva", "predicted_repeat_probability": 0.9333417699558688, "propensity_percentile": 0.9989041201238152, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6419a1be8feac26ec793667b71cbaeb4", "customer_state": "RJ", "customer_city": "petropolis", "predicted_repeat_probability": 0.9331542275936032, "propensity_percentile": 0.9988848941610752, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "31e412b9fb766b6794724ed17a41dfa6", "customer_state": "SP", "customer_city": "santos", "predicted_repeat_probability": 0.9319579524033906, "propensity_percentile": 0.998865668198335, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "b463aa86422087e97281b2787590fb0d", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9318670984226324, "propensity_percentile": 0.9988464422355948, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "75ff587e87e047a7e00f75bbcab17c00", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9308795999809296, "propensity_percentile": 0.9988272162728548, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ca55f9ebddc988ee65f4dea1a93ebc98", "customer_state": "SP", "customer_city": "mogi das cruzes", "predicted_repeat_probability": 0.929579834527666, "propensity_percentile": 0.9988079903101148, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ec7f1811826ab04a27a92197bc40c888", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9294956043753436, "propensity_percentile": 0.9987887643473748, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "e1b59a2032b34097d0c1c8d320f40832", "customer_state": "MG", "customer_city": "belo horizonte", "predicted_repeat_probability": 0.9289596503994076, "propensity_percentile": 0.9987695383846346, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0a61b571f594b6919601bcf3380da7f7", "customer_state": "MG", "customer_city": "belo horizonte", "predicted_repeat_probability": 0.9279529262752322, "propensity_percentile": 0.9987503124218944, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "1f2c5059dad2c277b3b338163b49ca73", "customer_state": "SP", "customer_city": "torrinha", "predicted_repeat_probability": 0.9274915199979424, "propensity_percentile": 0.9987310864591544, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "c411c8b6dbaffd467263f87a23f2cf52", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9262043418938948, "propensity_percentile": 0.9987118604964144, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "b643c19d91a65d73f94ba8e037668986", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9260370853181148, "propensity_percentile": 0.9986926345336744, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "4e1cce07cd5937c69dacac3c8b13d965", "customer_state": "SP", "customer_city": "mococa", "predicted_repeat_probability": 0.9258766771445794, "propensity_percentile": 0.9986734085709342, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "310647380793836bfa5b7b6b3f518423", "customer_state": "SP", "customer_city": "ribeirao preto", "predicted_repeat_probability": 0.92558074778225, "propensity_percentile": 0.998654182608194, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "8dcf2096a68ce8212a3f534ab31ee23e", "customer_state": "RS", "customer_city": "jari", "predicted_repeat_probability": 0.9252938462386612, "propensity_percentile": 0.998634956645454, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6e1550b8966f327f29bc06b18972dbec", "customer_state": "SP", "customer_city": "sao jose do rio preto", "predicted_repeat_probability": 0.925214003482384, "propensity_percentile": 0.998615730682714, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "c658495c41a24ef33a852db6840738a1", "customer_state": "PR", "customer_city": "telemaco borba", "predicted_repeat_probability": 0.924656148312376, "propensity_percentile": 0.998596504719974, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "44b6bbfea26596437062a38c8e6bcec1", "customer_state": "SP", "customer_city": "sao jose do rio preto", "predicted_repeat_probability": 0.9242448566376807, "propensity_percentile": 0.9985772787572338, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "2ddc001b620bd90d0f4378cfde1db887", "customer_state": "SP", "customer_city": "osasco", "predicted_repeat_probability": 0.923922924295686, "propensity_percentile": 0.9985580527944936, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0a609db8d244100909a15d65eadf8539", "customer_state": "RJ", "customer_city": "petropolis", "predicted_repeat_probability": 0.9237033889869292, "propensity_percentile": 0.9985388268317535, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "66f4eec9da64df09009a7f397c2a32b1", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.92334857242439, "propensity_percentile": 0.9985196008690136, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "88a8f123107a063acbdd1c90f3d8adea", "customer_state": "TO", "customer_city": "alvorada", "predicted_repeat_probability": 0.9213724470148688, "propensity_percentile": 0.9985003749062734, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "4ef6c02126b21225e011b242f9f79c6f", "customer_state": "SP", "customer_city": "sao jose do rio preto", "predicted_repeat_probability": 0.920351768028756, "propensity_percentile": 0.9984811489435332, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "02e4c56fefa30628768ffe326d332e2f", "customer_state": "RS", "customer_city": "porto alegre", "predicted_repeat_probability": 0.918032505986326, "propensity_percentile": 0.9984619229807932, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "cef29e793e232d30250331804cdb7000", "customer_state": "MG", "customer_city": "belo horizonte", "predicted_repeat_probability": 0.9172596403323148, "propensity_percentile": 0.9984426970180532, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "82809cee3c35eb89b4dd4d2d1a22eedf", "customer_state": "SP", "customer_city": "campinas", "predicted_repeat_probability": 0.9171225441581546, "propensity_percentile": 0.9984234710553131, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "09d7c538023c2c4fb0553c831c12f084", "customer_state": "SP", "customer_city": "sorocaba", "predicted_repeat_probability": 0.9170414150820152, "propensity_percentile": 0.998404245092573, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "a239b8e2fbce33780f1f1912e2ee5275", "customer_state": "AM", "customer_city": "manaus", "predicted_repeat_probability": 0.9166000617408988, "propensity_percentile": 0.9983850191298328, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "99b8ee09d642ffedf091951a7235faa0", "customer_state": "GO", "customer_city": "luziania", "predicted_repeat_probability": 0.9165829720545974, "propensity_percentile": 0.9983657931670928, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "f596242db91986b554f25768577cd5be", "customer_state": "MG", "customer_city": "curvelo", "predicted_repeat_probability": 0.9143062060180558, "propensity_percentile": 0.9983465672043528, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "e38a9d13896946501404c6d82790728c", "customer_state": "RS", "customer_city": "xangri-la", "predicted_repeat_probability": 0.9140465135835324, "propensity_percentile": 0.9983273412416128, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "a1874c5550d2f0bc14cc122164603713", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9135376377313216, "propensity_percentile": 0.9983081152788726, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "20282afdbe6cf22d5f5a956d8b5a3f78", "customer_state": "MG", "customer_city": "santa cruz de minas", "predicted_repeat_probability": 0.9124899018496404, "propensity_percentile": 0.9982888893161324, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "d7b4f3c9c89ba771ef099693c61d7085", "customer_state": "MG", "customer_city": "lagoa santa", "predicted_repeat_probability": 0.91248972695305, "propensity_percentile": 0.9982696633533924, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "3b92b8617254e581d164b5d213d437a2", "customer_state": "MG", "customer_city": "barbacena", "predicted_repeat_probability": 0.9098619017253606, "propensity_percentile": 0.9982504373906524, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "2aba7239448982a76a0a79666419e3a3", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9089000697383974, "propensity_percentile": 0.9982312114279124, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ee3adea169ca02ca9bd1e80bc620856e", "customer_state": "SP", "customer_city": "diadema", "predicted_repeat_probability": 0.9088893378045662, "propensity_percentile": 0.9982119854651722, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "2dc7f51f05ba1b1a92608e45e55d1fe1", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9085942551249468, "propensity_percentile": 0.998192759502432, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "339c527109c4c03e8e09bd4b593dab5f", "customer_state": "SP", "customer_city": "urania", "predicted_repeat_probability": 0.908347582386046, "propensity_percentile": 0.998173533539692, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0df55f5accedda71bda8f4c7f590951f", "customer_state": "SP", "customer_city": "santa rosa de viterbo", "predicted_repeat_probability": 0.9083459320127864, "propensity_percentile": 0.998154307576952, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "f121995493925a5ef0b46a13f594e0ab", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9083169792648638, "propensity_percentile": 0.9981350816142118, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "2b6ce149982204423f4efac29701255a", "customer_state": "MG", "customer_city": "belo horizonte", "predicted_repeat_probability": 0.9070888983096076, "propensity_percentile": 0.9981158556514718, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "e9b87dccd9c326a3325385087eb0150c", "customer_state": "RS", "customer_city": "guaiba", "predicted_repeat_probability": 0.9058685712212524, "propensity_percentile": 0.9980966296887316, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "c0fcb07a9959ae14f01bad208e445cc4", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.905515441814151, "propensity_percentile": 0.9980774037259916, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "7a311d62282fa63be12b02aef2fd21d1", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9054107914851762, "propensity_percentile": 0.9980581777632516, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "8f1794300ad248a55eae07168219ca15", "customer_state": "MG", "customer_city": "joao monlevade", "predicted_repeat_probability": 0.9049571599407784, "propensity_percentile": 0.9980389518005114, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "e0c99ffdcd8891130985ac90cd2d8eec", "customer_state": "MG", "customer_city": "claudio", "predicted_repeat_probability": 0.90371662057516, "propensity_percentile": 0.9980197258377712, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "beceaa52fb2f761e647222b3cf7ce0b2", "customer_state": "SC", "customer_city": "tijucas", "predicted_repeat_probability": 0.9028407846583943, "propensity_percentile": 0.9980004998750313, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "5b09c620db60411b0be6f1817c6cbe71", "customer_state": "RJ", "customer_city": "arraial do cabo", "predicted_repeat_probability": 0.9023610828304176, "propensity_percentile": 0.9979812739122912, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ff922bdd6bafcdf99cb90d7f39cea5b3", "customer_state": "SP", "customer_city": "barra bonita", "predicted_repeat_probability": 0.902200302945002, "propensity_percentile": 0.9979620479495512, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "c9b3b24308b1a4587ffa3e60fafc2b1f", "customer_state": "SP", "customer_city": "santos", "predicted_repeat_probability": 0.9020750405590684, "propensity_percentile": 0.997942821986811, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6f302f15a62c56b3100b67a81bfef328", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9018971478235728, "propensity_percentile": 0.9979235960240708, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "04e495a3f45df8b41be2e934bbc16961", "customer_state": "RS", "customer_city": "gravatai", "predicted_repeat_probability": 0.901870341226384, "propensity_percentile": 0.9979043700613308, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "2e0a2166aa23da2472c6a60c4af6f7a6", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9018337306036512, "propensity_percentile": 0.9978851440985907, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "b56c60ed244eed72ff5640a41bf254d5", "customer_state": "MG", "customer_city": "ponte nova", "predicted_repeat_probability": 0.9014572804774182, "propensity_percentile": 0.9978659181358508, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "c968cdb924339d7a42e0c448153b72cc", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.9010871730718156, "propensity_percentile": 0.9978466921731106, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "e226254ce0c6d5b7a7ef7218c9b5b518", "customer_state": "SP", "customer_city": "araras", "predicted_repeat_probability": 0.900809767550874, "propensity_percentile": 0.9978274662103704, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "28ad66c8baf13c85d2a936d0b06e73f6", "customer_state": "SP", "customer_city": "paulinia", "predicted_repeat_probability": 0.9003900761619396, "propensity_percentile": 0.9978082402476304, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "cd11a0920c498edb1da9ecd2d31aa599", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.9002622068468747, "propensity_percentile": 0.9977890142848904, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "f0daba1cfcc18d5a3229e1a911313e3e", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.8993707621179274, "propensity_percentile": 0.9977697883221502, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "88fcb680dc8cd2e540010c0750b78242", "customer_state": "SP", "customer_city": "indaiatuba", "predicted_repeat_probability": 0.8991476236371783, "propensity_percentile": 0.9977505623594102, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "d3882d7abd0c66064d740d7ed04dd1ef", "customer_state": "SP", "customer_city": "campinas", "predicted_repeat_probability": 0.8987843724475723, "propensity_percentile": 0.99773133639667, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ebad8517c448bbd20ca1910bf1a33819", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.8969791171280083, "propensity_percentile": 0.99771211043393, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "738ffcf1017b584e9d2684b36e07469c", "customer_state": "GO", "customer_city": "goiania", "predicted_repeat_probability": 0.8968852447342156, "propensity_percentile": 0.99769288447119, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "dcee1e44ded6f1bfc5b4988d771243da", "customer_state": "PA", "customer_city": "belem", "predicted_repeat_probability": 0.8957101734567022, "propensity_percentile": 0.9976736585084498, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "7305430719d715992b00be82af4a6aa8", "customer_state": "RS", "customer_city": "porto alegre", "predicted_repeat_probability": 0.8956863530265176, "propensity_percentile": 0.9976544325457096, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "59d66d72939bc9497e19d89c61a96d5f", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.8955516059953984, "propensity_percentile": 0.9976352065829696, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "a73c5464692d3bc09d64e3edefae9015", "customer_state": "SP", "customer_city": "santo andre", "predicted_repeat_probability": 0.8944029299586569, "propensity_percentile": 0.9976159806202296, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "b64064e3ae051f50b6f1eb12552d30e4", "customer_state": "SP", "customer_city": "caieiras", "predicted_repeat_probability": 0.8942876116178999, "propensity_percentile": 0.9975967546574894, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "9935b7e2683de890a208026f020e54d3", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.8933796621649894, "propensity_percentile": 0.9975775286947494, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "c35ffdd9679e194c3673533720b5e00c", "customer_state": "SP", "customer_city": "santa rita do passa quatro", "predicted_repeat_probability": 0.8929794371275077, "propensity_percentile": 0.9975583027320092, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "142575266950512b56af193f3962270a", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.892784216399598, "propensity_percentile": 0.9975390767692692, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6aa14366984bcc5f1ea760928283d451", "customer_state": "SP", "customer_city": "penapolis", "predicted_repeat_probability": 0.8925752511097677, "propensity_percentile": 0.9975198508065292, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ca77025e7201e3b30c44b472ff346268", "customer_state": "PE", "customer_city": "recife", "predicted_repeat_probability": 0.8925212806602077, "propensity_percentile": 0.9975006248437892, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "5bdb6f56a8fb4272b802f504bb6d1287", "customer_state": "SP", "customer_city": "joanopolis", "predicted_repeat_probability": 0.8917343232155202, "propensity_percentile": 0.9974813988810488, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "99d697dd68fad729283560abe0adae43", "customer_state": "RJ", "customer_city": "sao goncalo", "predicted_repeat_probability": 0.8917251557452798, "propensity_percentile": 0.9974621729183089, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "be09f3273b8ef531c15a9ea93d1b6280", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.8897551782331232, "propensity_percentile": 0.9974429469555688, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ca0cd77819a2427d6ca0e0d0e92de58b", "customer_state": "SP", "customer_city": "junqueiropolis", "predicted_repeat_probability": 0.8896250331690254, "propensity_percentile": 0.9974237209928288, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "80e00a7b9ead7590bf05116f0237c896", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.8893446140380967, "propensity_percentile": 0.9974044950300888, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6eefa309faab7725bf4b9dce147e4ae6", "customer_state": "SP", "customer_city": "candido rodrigues", "predicted_repeat_probability": 0.8888457702102521, "propensity_percentile": 0.9973852690673486, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "51dc56123336c573f2977f5da81b17b9", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.8886190726335027, "propensity_percentile": 0.9973660431046084, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "d3359a56d96666ac0c21bb01e7a61c95", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.8884469734582796, "propensity_percentile": 0.9973468171418683, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "65663adf8c7a498b79e57ff84ab2b654", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.8881783588418337, "propensity_percentile": 0.9973275911791284, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "664fe7916cb8709c6b848383c6361dcc", "customer_state": "SP", "customer_city": "maua", "predicted_repeat_probability": 0.8877595241752227, "propensity_percentile": 0.9973083652163882, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0ea353565cdde00e1d8352a08290a352", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.8873926702428027, "propensity_percentile": 0.997289139253648, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "609b7feab0f0c9726929ec4891447b02", "customer_state": "RJ", "customer_city": "rio de janeiro", "predicted_repeat_probability": 0.8865353421608864, "propensity_percentile": 0.997269913290908, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "49d1599dd80dedc213037342bbe43fd7", "customer_state": "SP", "customer_city": "atibaia", "predicted_repeat_probability": 0.8857152353792604, "propensity_percentile": 0.997250687328168, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "d5419994a02a55d4b7cd00e77fabdbae", "customer_state": "SP", "customer_city": "ipero", "predicted_repeat_probability": 0.8856240501811894, "propensity_percentile": 0.9972314613654278, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "9d31457a03125fc870787a251760315a", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.8847547272443451, "propensity_percentile": 0.9972122354026878, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "eac6dbc8ecd0a2f08ed8e53d18f0e0d0", "customer_state": "SP", "customer_city": "suzano", "predicted_repeat_probability": 0.8847341680367142, "propensity_percentile": 0.9971930094399476, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "e45b0c7dd75287df589a26fdb7c2fcaf", "customer_state": "RJ", "customer_city": "rio bonito", "predicted_repeat_probability": 0.8838564391754637, "propensity_percentile": 0.9971737834772076, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "eb17a45cc9586bc95b8ea855d83e7b6f", "customer_state": "MG", "customer_city": "inconfidentes", "predicted_repeat_probability": 0.8835785662180825, "propensity_percentile": 0.9971545575144676, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "7b662d846265cb0ed144db95fe0c74dc", "customer_state": "SP", "customer_city": "sao paulo", "predicted_repeat_probability": 0.882913579558527, "propensity_percentile": 0.9971353315517274, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "d44ccec15f5f86d14d6a2cfa67da1975", "customer_state": "CE", "customer_city": "aracati", "predicted_repeat_probability": 0.8824960643902464, "propensity_percentile": 0.9970584277007672, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "c6e149b96ed4793d54a9df68edba5371", "customer_state": "PR", "customer_city": "guarapuava", "predicted_repeat_probability": 0.8815154843302253, "propensity_percentile": 0.9970007498125468, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "51d121ddc025c1b70f8f62a1b727aecf", "customer_state": "RO", "customer_city": "ariquemes", "predicted_repeat_probability": 0.8781468111848009, "propensity_percentile": 0.9968469421106262, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "967ee07cb69460a7e1d42c7747142572", "customer_state": "MT", "customer_city": "barra do garcas", "predicted_repeat_probability": 0.8771571200613347, "propensity_percentile": 0.996789264222406, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0aadc1d26d1c8b88a52c39a533ccea93", "customer_state": "BA", "customer_city": "salvador", "predicted_repeat_probability": 0.8767527587798245, "propensity_percentile": 0.9967508122969256, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "364f7934597f72889dd3e205e8c80778", "customer_state": "GO", "customer_city": "goiania", "predicted_repeat_probability": 0.8722927701062547, "propensity_percentile": 0.9965008747813048, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "b08fab27d47a1eb6deda07bfd965ad43", "customer_state": "ES", "customer_city": "sao mateus", "predicted_repeat_probability": 0.8641375182633597, "propensity_percentile": 0.9959817737873224, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "011b4adcd54683b480c4d841250a987f", "customer_state": "BA", "customer_city": "santo amaro", "predicted_repeat_probability": 0.8612270911598501, "propensity_percentile": 0.995904869936362, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "029b457bd01199c39136f89e0eddcd3a", "customer_state": "MA", "customer_city": "coelho neto", "predicted_repeat_probability": 0.8591904763360343, "propensity_percentile": 0.9958279660854016, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "dc48b0a1b0e6abb6586f322c189f6b93", "customer_state": "BA", "customer_city": "salvador", "predicted_repeat_probability": 0.855884858567618, "propensity_percentile": 0.9956164804952607, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "8bb910cd8c3b29e4acf2e94e3aaffbbf", "customer_state": "MT", "customer_city": "cuiaba", "predicted_repeat_probability": 0.8548333529520228, "propensity_percentile": 0.9955780285697806, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "bf6656ef50e6fd00e7517b01d615b4f3", "customer_state": "ES", "customer_city": "vila velha", "predicted_repeat_probability": 0.8539175642594813, "propensity_percentile": 0.99546267279334, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "98758d88bf4b8eef1372ddee45d63178", "customer_state": "AL", "customer_city": "campo alegre", "predicted_repeat_probability": 0.8509363834736217, "propensity_percentile": 0.9951550573894988, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "9077449283dc1319d5e51fb3159b28e2", "customer_state": "ES", "customer_city": "anchieta", "predicted_repeat_probability": 0.844440704517039, "propensity_percentile": 0.9947128602464768, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "13607978e0686d841deb64954c023495", "customer_state": "PA", "customer_city": "belem", "predicted_repeat_probability": 0.8434866682682073, "propensity_percentile": 0.9946744083209966, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "91def939002d33dcbf6a038b5c879f7b", "customer_state": "MA", "customer_city": "lago da pedra", "predicted_repeat_probability": 0.8410605225791334, "propensity_percentile": 0.994501374656336, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "01c289bb06354cdc7e6549570f20ada4", "customer_state": "PB", "customer_city": "joao pessoa", "predicted_repeat_probability": 0.8359025323267789, "propensity_percentile": 0.9941168554015344, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "8f3dca4306d5a89e4ae2c65c110603a2", "customer_state": "DF", "customer_city": "brasilia", "predicted_repeat_probability": 0.8342908651335578, "propensity_percentile": 0.9939245957741334, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "2878289928927b75d078057c8d91405f", "customer_state": "DF", "customer_city": "brasilia", "predicted_repeat_probability": 0.8337217349409145, "propensity_percentile": 0.9938861438486531, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0dd933d1e0253343083013791bf5d5e9", "customer_state": "RO", "customer_city": "porto velho", "predicted_repeat_probability": 0.8280584969559969, "propensity_percentile": 0.9935208505565916, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "27259fad9054fce994a70f1d117bc402", "customer_state": "PE", "customer_city": "jatoba", "predicted_repeat_probability": 0.8276928985427177, "propensity_percentile": 0.9935016245938516, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "cf26c0ed98d29abab5c9fe2643f88d19", "customer_state": "TO", "customer_city": "araguatins", "predicted_repeat_probability": 0.8204672711273016, "propensity_percentile": 0.9930017495626092, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ec0f5b4fe392d71f361112c1b508b707", "customer_state": "RO", "customer_city": "porto velho", "predicted_repeat_probability": 0.8029752405268148, "propensity_percentile": 0.9916367062080632, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "d2787622df9fd933c164f7cf696a4e2a", "customer_state": "TO", "customer_city": "gurupi", "predicted_repeat_probability": 0.7935055009615096, "propensity_percentile": 0.9907330859592794, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "3d914d0c5f629821a7239567f8dcd139", "customer_state": "TO", "customer_city": "gurupi", "predicted_repeat_probability": 0.7923631719275279, "propensity_percentile": 0.9906177301828388, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "377860a7242c2e503c926b76ab6e0a65", "customer_state": "RO", "customer_city": "porto velho", "predicted_repeat_probability": 0.7852321799715144, "propensity_percentile": 0.989925595524196, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "533f6a082e21c4886702bd9868385498", "customer_state": "TO", "customer_city": "goianorte", "predicted_repeat_probability": 0.7763133036549845, "propensity_percentile": 0.9891565570145924, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6668e1ae499e2e9be475b7f708580232", "customer_state": "PA", "customer_city": "parauapebas", "predicted_repeat_probability": 0.7651352191994731, "propensity_percentile": 0.987906869436487, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "28989ef45087c96e5a4346e88216c2ba", "customer_state": "AC", "customer_city": "rio branco", "predicted_repeat_probability": 0.7648463419550877, "propensity_percentile": 0.9878299655855268, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "91ffaf5eb7f4bd6a48b07f3546fb7a99", "customer_state": "MA", "customer_city": "coroata", "predicted_repeat_probability": 0.7627660478581393, "propensity_percentile": 0.9877146098090862, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "1cc48564488184883cc7923b82c7b3f9", "customer_state": "PE", "customer_city": "recife", "predicted_repeat_probability": 0.7620959470379173, "propensity_percentile": 0.9875608021071656, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "12c54f6dfd4b723a6c76c4c989494422", "customer_state": "PA", "customer_city": "curuca", "predicted_repeat_probability": 0.7611076539565805, "propensity_percentile": 0.9874262203679848, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "54ed3f082c9e7725a0e26e9e682fc825", "customer_state": "PE", "customer_city": "recife", "predicted_repeat_probability": 0.7594038692666912, "propensity_percentile": 0.9873108645915444, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "db03954a9a1cc5e71f6e0f73e81a628c", "customer_state": "MS", "customer_city": "sidrolandia", "predicted_repeat_probability": 0.7589757740562084, "propensity_percentile": 0.9872724126660642, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "51c23d1b01aebce5a1e32e3d9b312aa3", "customer_state": "MT", "customer_city": "diamantino", "predicted_repeat_probability": 0.7588266621384527, "propensity_percentile": 0.987233960740584, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "7588c20c457369de8caad958afc1cc06", "customer_state": "RO", "customer_city": "porto velho", "predicted_repeat_probability": 0.7558659516125057, "propensity_percentile": 0.9868878934112626, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "24fb2954f8c6cdb4b900ed8db6dc88e2", "customer_state": "CE", "customer_city": "fortaleza", "predicted_repeat_probability": 0.7479121283563049, "propensity_percentile": 0.9860034991252188, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0fd475edfa0b61c59ecde6f89c21dedb", "customer_state": "CE", "customer_city": "maracanau", "predicted_repeat_probability": 0.7478690111294978, "propensity_percentile": 0.9859842731624786, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0f0e48a91c9c285404572b095bcb373c", "customer_state": "SE", "customer_city": "aracaju", "predicted_repeat_probability": 0.744436551049406, "propensity_percentile": 0.9856382058331572, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "8d6512fa0e1c5cdbd789b956de79fe2f", "customer_state": "AC", "customer_city": "rio branco", "predicted_repeat_probability": 0.7376818623143431, "propensity_percentile": 0.9851191048391748, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "8901b2526349d372dd0bdf8d77af656d", "customer_state": "MS", "customer_city": "dourados", "predicted_repeat_probability": 0.737042397974451, "propensity_percentile": 0.9850037490627344, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ad7072317d373de9bdc9b4ed5b6c5a85", "customer_state": "SE", "customer_city": "aracaju", "predicted_repeat_probability": 0.7360879542444475, "propensity_percentile": 0.9848691673235536, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "d8a89dc47bde7dc0b83a3434cc017ee1", "customer_state": "RN", "customer_city": "nova cruz", "predicted_repeat_probability": 0.7291351534109574, "propensity_percentile": 0.9837156095591488, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "125740359669fa63858476105a5d523d", "customer_state": "MT", "customer_city": "primavera do leste", "predicted_repeat_probability": 0.7239522960181434, "propensity_percentile": 0.9827543114221444, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "d92462d83762d5e5c112bccc344119e6", "customer_state": "MA", "customer_city": "grajau", "predicted_repeat_probability": 0.7187455913916344, "propensity_percentile": 0.98175456135966, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "54d0581e27042d4f305886d5469fc635", "customer_state": "AC", "customer_city": "rio branco", "predicted_repeat_probability": 0.717415340509413, "propensity_percentile": 0.9815623017322592, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "8c21dd8c37144807c601f99f2a209dfb", "customer_state": "DF", "customer_city": "brasilia", "predicted_repeat_probability": 0.7159911004606941, "propensity_percentile": 0.981273912291158, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "f11821d908830e74ad782532ebed897a", "customer_state": "MT", "customer_city": "diamantino", "predicted_repeat_probability": 0.7154281444685744, "propensity_percentile": 0.9811393305519774, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6faa792efdf7c9c6eb7cfdf68aa5e581", "customer_state": "AL", "customer_city": "olho d'agua das flores", "predicted_repeat_probability": 0.7103087045170444, "propensity_percentile": 0.9799857727875724, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "e1f1862e74270220628e76ecc8d68f98", "customer_state": "DF", "customer_city": "taguatinga", "predicted_repeat_probability": 0.7081004731215382, "propensity_percentile": 0.97942821986811, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "425634deb94b1080fc7d283f3a644941", "customer_state": "PA", "customer_city": "paragominas", "predicted_repeat_probability": 0.704838945953761, "propensity_percentile": 0.9787937630976872, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "a0c76d8c30b2446442e4177144b7d309", "customer_state": "SE", "customer_city": "aracaju", "predicted_repeat_probability": 0.7020899134353277, "propensity_percentile": 0.978101628439044, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "c73db85789b600b05c503d21441940f9", "customer_state": "AC", "customer_city": "rio branco", "predicted_repeat_probability": 0.6974064950875128, "propensity_percentile": 0.9767942629727184, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "ef0efc1944d3c2469876fbd10eb5cca2", "customer_state": "SE", "customer_city": "estancia", "predicted_repeat_probability": 0.6950319431763169, "propensity_percentile": 0.9761790321650357, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0e06af8004ffd01a3461e768f9f659aa", "customer_state": "MS", "customer_city": "bodoquena", "predicted_repeat_probability": 0.6940301274596591, "propensity_percentile": 0.975794512910234, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "7263bdaf8bd8ca9e023f521f8ae50970", "customer_state": "SE", "customer_city": "aracaju", "predicted_repeat_probability": 0.6862483754228181, "propensity_percentile": 0.973506623344164, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "650dd69e8e20391188d727da3599e9a7", "customer_state": "AC", "customer_city": "brasileia", "predicted_repeat_probability": 0.6844151690744616, "propensity_percentile": 0.9729106184992212, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "083ca1aa470c280236380973a48f77c6", "customer_state": "PB", "customer_city": "joao pessoa", "predicted_repeat_probability": 0.673541218373812, "propensity_percentile": 0.9688731663238036, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "6a80a86f478a93a5f4c7ba8db6441a6b", "customer_state": "MS", "customer_city": "ponta pora", "predicted_repeat_probability": 0.6543030483973313, "propensity_percentile": 0.9591832811028012, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "0ac32dafa635f87523a45ca405e82079", "customer_state": "AM", "customer_city": "manaus", "predicted_repeat_probability": 0.6467596191544154, "propensity_percentile": 0.9538384634610578, "propensity_segment": "High (top 5%)"}, {"customer_unique_id": "f9739394ba1f9417dfdac702e30f4b44", "customer_state": "MS", "customer_city": "nova alvorada do sul", "predicted_repeat_probability": 0.6376288692923685, "propensity_percentile": 0.946109626439544, "propensity_segment": "Medium (next 15%)"}, {"customer_unique_id": "6fbcadffe2ad77fd2b3b68552763aeda", "customer_state": "AM", "customer_city": "manaus", "predicted_repeat_probability": 0.6340839201848528, "propensity_percentile": 0.9425528233326284, "propensity_segment": "Medium (next 15%)"}, {"customer_unique_id": "5182802360c80b56e202491c166b4515", "customer_state": "AM", "customer_city": "manaus", "predicted_repeat_probability": 0.6332405217866397, "propensity_percentile": 0.9416492030838444, "propensity_segment": "Medium (next 15%)"}, {"customer_unique_id": "e82c14aaa06f6511fa17a775101df09c", "customer_state": "AM", "customer_city": "manaus", "predicted_repeat_probability": 0.6331515429952801, "propensity_percentile": 0.9415915251956242, "propensity_segment": "Medium (next 15%)"}, {"customer_unique_id": "d8f979fcfc0ce686f6abf5af5f5217d4", "customer_state": "RN", "customer_city": "mossoro", "predicted_repeat_probability": 0.6243175738432954, "propensity_percentile": 0.931728606309961, "propensity_segment": "Medium (next 15%)"}, {"customer_unique_id": "c7c19110042036e6266adc998cbf1289", "customer_state": "CE", "customer_city": "acarau", "predicted_repeat_probability": 0.602556267368461, "propensity_percentile": 0.90183223424913, "propensity_segment": "Medium (next 15%)"}, {"customer_unique_id": "12e9edd8ac86f3dd6e1cf341ee6a9dcd", "customer_state": "CE", "customer_city": "eusebio", "predicted_repeat_probability": 0.584044491958403, "propensity_percentile": 0.8702055255416915, "propensity_segment": "Medium (next 15%)"}, {"customer_unique_id": "3a73ce6fc3b392e1ca609b5548418c36", "customer_state": "RN", "customer_city": "natal", "predicted_repeat_probability": 0.5498994516056863, "propensity_percentile": 0.7879568569396113, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "d18ba4602d649c19b02974c0cb8aa016", "customer_state": "AL", "customer_city": "maceio", "predicted_repeat_probability": 0.53599283452384, "propensity_percentile": 0.7466210370484302, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "1118bbd6c82a824ebc677b12e525864f", "customer_state": "PB", "customer_city": "santa rita", "predicted_repeat_probability": 0.5216972563962604, "propensity_percentile": 0.6989983273412416, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "1650819cd492bbf4b9d189c7d4126475", "customer_state": "RN", "customer_city": "natal", "predicted_repeat_probability": 0.5173924099816816, "propensity_percentile": 0.6821563839809278, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "989ff17eed965d5e5949b4d9a6f6af67", "customer_state": "RN", "customer_city": "natal", "predicted_repeat_probability": 0.510135991736728, "propensity_percentile": 0.653202084094361, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "53f34954c078f5034197993c0e109b95", "customer_state": "AL", "customer_city": "arapiraca", "predicted_repeat_probability": 0.4874613644456309, "propensity_percentile": 0.5584180877857459, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "a7f8b23aaf522616c6c7daa2a3753247", "customer_state": "PB", "customer_city": "joao pessoa", "predicted_repeat_probability": 0.4594876317709682, "propensity_percentile": 0.440197642896968, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "48ee7a46eb501497a2573bff4d8c1e33", "customer_state": "PB", "customer_city": "joao pessoa", "predicted_repeat_probability": 0.4468134771247663, "propensity_percentile": 0.3907869186549516, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "fad90f16ddc71928c1b8df168ed6f47c", "customer_state": "AL", "customer_city": "maceio", "predicted_repeat_probability": 0.4317689865546928, "propensity_percentile": 0.3369734489454559, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "bbe8686a830c0caaf68452997d73d396", "customer_state": "AP", "customer_city": "macapa", "predicted_repeat_probability": 0.2523040766399393, "propensity_percentile": 0.0481994885893911, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "b045295488236fa73d8d9c37dc4b03e7", "customer_state": "PI", "customer_city": "teresina", "predicted_repeat_probability": 0.2346141696402107, "propensity_percentile": 0.0391632861015515, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "31e2e13cc64f2a3bd9dbde22bbad06b2", "customer_state": "PI", "customer_city": "teresina", "predicted_repeat_probability": 0.2234807596858771, "propensity_percentile": 0.0339530501989887, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "9f6a13c93d886acbefe16ad39bbfb85c", "customer_state": "PI", "customer_city": "floriano", "predicted_repeat_probability": 0.1945914234814168, "propensity_percentile": 0.0232249629900217, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "e375ec312dc8f13ae8424527ca2397d8", "customer_state": "RR", "customer_city": "boa vista", "predicted_repeat_probability": 0.1580737394056712, "propensity_percentile": 0.0147270874589045, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "e6b2ebebab1d04ea3fe75e9ef4f8f433", "customer_state": "RR", "customer_city": "boa vista", "predicted_repeat_probability": 0.1532793227336594, "propensity_percentile": 0.0140541787630015, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "3ab195a29a2b0e131d57df59024d6d50", "customer_state": "RR", "customer_city": "boa vista", "predicted_repeat_probability": 0.1479929332002872, "propensity_percentile": 0.013477399880799, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "2f8fdcc19a1a75fcbc5fb429998336bc", "customer_state": "AP", "customer_city": "santana", "predicted_repeat_probability": 0.144104747130845, "propensity_percentile": 0.0132274623651779, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "61f7b3e7a4d47f1c7281d4c2eb208975", "customer_state": "RR", "customer_city": "boa vista", "predicted_repeat_probability": 0.1440520004944548, "propensity_percentile": 0.0131890104396977, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "2d006f3f447dba0133fac880d10c8978", "customer_state": "RR", "customer_city": "boa vista", "predicted_repeat_probability": 0.1421963209119944, "propensity_percentile": 0.0131121065887374, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "4461f7a5347f5a50b31b78c638adf9fb", "customer_state": "AP", "customer_city": "macapa", "predicted_repeat_probability": 0.1299788822511406, "propensity_percentile": 0.011650933420491, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "027b0a2a0630aa7439875c30b987bf99", "customer_state": "AP", "customer_city": "macapa", "predicted_repeat_probability": 0.1263790417512958, "propensity_percentile": 0.0113433180166496, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "4b480671804de1d9746ab18f3528a665", "customer_state": "AP", "customer_city": "macapa", "predicted_repeat_probability": 0.1261480021638632, "propensity_percentile": 0.0113240920539096, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "247e0dcd20596bee51bd2b07f633fa04", "customer_state": "PI", "customer_city": "teresina", "predicted_repeat_probability": 0.0986793403269358, "propensity_percentile": 0.0090169765250994, "propensity_segment": "Low (bottom 80%)"}, {"customer_unique_id": "0cc2ee1112a11a1094eff52fa2e87150", "customer_state": "PI", "customer_city": "teresina", "predicted_repeat_probability": 0.0863045050805992, "propensity_percentile": 0.0081710341645357, "propensity_segment": "Low (bottom 80%)"}], "cities_by_state": [{"customer_state": "AC", "customer_city": "rio branco", "count": 48, "avg_prob": 0.5595954923226069}, {"customer_state": "AC", "customer_city": "cruzeiro do sul", "count": 2, "avg_prob": 0.6113291515569343}, {"customer_state": "AC", "customer_city": "senador guiomard", "count": 2, "avg_prob": 0.5430492112229608}, {"customer_state": "AC", "customer_city": "brasileia", "count": 1, "avg_prob": 0.6844151690744616}, {"customer_state": "AC", "customer_city": "epitaciolandia", "count": 1, "avg_prob": 0.4820825582435733}, {"customer_state": "AC", "customer_city": "manoel urbano", "count": 1, "avg_prob": 0.3735086885500082}, {"customer_state": "AC", "customer_city": "porto acre", "count": 1, "avg_prob": 0.5400844972028961}, {"customer_state": "AC", "customer_city": "xapuri", "count": 1, "avg_prob": 0.4870309366453745}, {"customer_state": "AL", "customer_city": "maceio", "count": 121, "avg_prob": 0.2662810987615779}, {"customer_state": "AL", "customer_city": "arapiraca", "count": 22, "avg_prob": 0.24117611262620783}, {"customer_state": "AL", "customer_city": "teotonio vilela", "count": 6, "avg_prob": 0.21836031845419487}, {"customer_state": "AL", "customer_city": "palmeira dos indios", "count": 5, "avg_prob": 0.24297027500315133}, {"customer_state": "AL", "customer_city": "penedo", "count": 4, "avg_prob": 0.21638818959111153}, {"customer_state": "AL", "customer_city": "rio largo", "count": 4, "avg_prob": 0.3146002380174273}, {"customer_state": "AL", "customer_city": "batalha", "count": 3, "avg_prob": 0.2545865730528266}, {"customer_state": "AL", "customer_city": "delmiro gouveia", "count": 3, "avg_prob": 0.2948127436662576}, {"customer_state": "AL", "customer_city": "maragogi", "count": 3, "avg_prob": 0.19119576460104945}, {"customer_state": "AL", "customer_city": "coruripe", "count": 2, "avg_prob": 0.19919645096953803}, {"customer_state": "AL", "customer_city": "igaci", "count": 2, "avg_prob": 0.28482537257807616}, {"customer_state": "AL", "customer_city": "mata grande", "count": 2, "avg_prob": 0.260271924986683}, {"customer_state": "AL", "customer_city": "olho d'agua das flores", "count": 2, "avg_prob": 0.5164610429194968}, {"customer_state": "AL", "customer_city": "paulo jacinto", "count": 2, "avg_prob": 0.37271217554246694}, {"customer_state": "AL", "customer_city": "pilar", "count": 2, "avg_prob": 0.25264299616434327}, {"customer_state": "AM", "customer_city": "manaus", "count": 75, "avg_prob": 0.5226794093778997}, {"customer_state": "AM", "customer_city": "humaita", "count": 2, "avg_prob": 0.5586759299402406}, {"customer_state": "AM", "customer_city": "urucurituba", "count": 1, "avg_prob": 0.5329757208173911}, {"customer_state": "AP", "customer_city": "macapa", "count": 29, "avg_prob": 0.08484316044701731}, {"customer_state": "AP", "customer_city": "santana", "count": 7, "avg_prob": 0.08452719361454038}, {"customer_state": "AP", "customer_city": "laranjal do jari", "count": 2, "avg_prob": 0.08514732980644199}, {"customer_state": "AP", "customer_city": "oiapoque", "count": 1, "avg_prob": 0.0909283239133722}, {"customer_state": "AP", "customer_city": "porto grande", "count": 1, "avg_prob": 0.0832612903977856}, {"customer_state": "BA", "customer_city": "salvador", "count": 623, "avg_prob": 0.392590007870486}, {"customer_state": "BA", "customer_city": "feira de santana", "count": 99, "avg_prob": 0.3960246917827928}, {"customer_state": "BA", "customer_city": "vitoria da conquista", "count": 54, "avg_prob": 0.3986699997780143}, {"customer_state": "BA", "customer_city": "lauro de freitas", "count": 42, "avg_prob": 0.39555969047339473}, {"customer_state": "BA", "customer_city": "ilheus", "count": 39, "avg_prob": 0.39458662686041057}, {"customer_state": "BA", "customer_city": "itabuna", "count": 31, "avg_prob": 0.3883872230899238}, {"customer_state": "BA", "customer_city": "barreiras", "count": 30, "avg_prob": 0.37392362843921717}, {"customer_state": "BA", "customer_city": "camacari", "count": 27, "avg_prob": 0.3520346184722274}, {"customer_state": "BA", "customer_city": "porto seguro", "count": 25, "avg_prob": 0.3676279076328378}, {"customer_state": "BA", "customer_city": "eunapolis", "count": 23, "avg_prob": 0.34947158099114933}, {"customer_state": "BA", "customer_city": "juazeiro", "count": 23, "avg_prob": 0.3873746999577911}, {"customer_state": "BA", "customer_city": "paulo afonso", "count": 20, "avg_prob": 0.38496929864374374}, {"customer_state": "BA", "customer_city": "alagoinhas", "count": 19, "avg_prob": 0.37034707824329266}, {"customer_state": "BA", "customer_city": "guanambi", "count": 19, "avg_prob": 0.4104093012972772}, {"customer_state": "BA", "customer_city": "luis eduardo magalhaes", "count": 18, "avg_prob": 0.382510976037704}, {"customer_state": "CE", "customer_city": "fortaleza", "count": 337, "avg_prob": 0.25365997409257546}, {"customer_state": "CE", "customer_city": "caucaia", "count": 23, "avg_prob": 0.21296146487329154}, {"customer_state": "CE", "customer_city": "juazeiro do norte", "count": 17, "avg_prob": 0.225385441792475}, {"customer_state": "CE", "customer_city": "sobral", "count": 17, "avg_prob": 0.19349289739984976}, {"customer_state": "CE", "customer_city": "aracati", "count": 13, "avg_prob": 0.3122699460641832}, {"customer_state": "CE", "customer_city": "crato", "count": 12, "avg_prob": 0.24561159109405373}, {"customer_state": "CE", "customer_city": "quixada", "count": 10, "avg_prob": 0.2230134642552824}, {"customer_state": "CE", "customer_city": "eusebio", "count": 9, "avg_prob": 0.2842943008140087}, {"customer_state": "CE", "customer_city": "iguatu", "count": 9, "avg_prob": 0.2481346682135604}, {"customer_state": "CE", "customer_city": "maracanau", "count": 9, "avg_prob": 0.31902383192144923}, {"customer_state": "CE", "customer_city": "itapipoca", "count": 8, "avg_prob": 0.24905446608081216}, {"customer_state": "CE", "customer_city": "morada nova", "count": 7, "avg_prob": 0.231929474927178}, {"customer_state": "CE", "customer_city": "camocim", "count": 6, "avg_prob": 0.21987349537723058}, {"customer_state": "CE", "customer_city": "crateus", "count": 6, "avg_prob": 0.2560410772748775}, {"customer_state": "CE", "customer_city": "limoeiro do norte", "count": 6, "avg_prob": 0.2627633240702591}, {"customer_state": "DF", "customer_city": "brasilia", "count": 1048, "avg_prob": 0.296842008685563}, {"customer_state": "DF", "customer_city": "taguatinga", "count": 3, "avg_prob": 0.46036012679194854}, {"customer_state": "DF", "customer_city": "ceilandia", "count": 1, "avg_prob": 0.3492798951376879}, {"customer_state": "DF", "customer_city": "guara", "count": 1, "avg_prob": 0.6680194920325345}, {"customer_state": "DF", "customer_city": "santa maria", "count": 1, "avg_prob": 0.134181190512397}, {"customer_state": "DF", "customer_city": "sobradinho", "count": 1, "avg_prob": 0.2768165643198204}, {"customer_state": "ES", "customer_city": "vitoria", "count": 204, "avg_prob": 0.3563469068899594}, {"customer_state": "ES", "customer_city": "vila velha", "count": 176, "avg_prob": 0.35295890784428535}, {"customer_state": "ES", "customer_city": "serra", "count": 158, "avg_prob": 0.3573347363291257}, {"customer_state": "ES", "customer_city": "cariacica", "count": 77, "avg_prob": 0.35183571968793703}, {"customer_state": "ES", "customer_city": "cachoeiro de itapemirim", "count": 60, "avg_prob": 0.36236133145171273}, {"customer_state": "ES", "customer_city": "guarapari", "count": 42, "avg_prob": 0.38275259918741433}, {"customer_state": "ES", "customer_city": "colatina", "count": 37, "avg_prob": 0.3602737727631291}, {"customer_state": "ES", "customer_city": "linhares", "count": 31, "avg_prob": 0.3616875292319131}, {"customer_state": "ES", "customer_city": "sao mateus", "count": 26, "avg_prob": 0.3739436655188948}, {"customer_state": "ES", "customer_city": "aracruz", "count": 20, "avg_prob": 0.33823975192697603}, {"customer_state": "ES", "customer_city": "nova venecia", "count": 12, "avg_prob": 0.38271043575356906}, {"customer_state": "ES", "customer_city": "marataizes", "count": 11, "avg_prob": 0.3744738137447211}, {"customer_state": "ES", "customer_city": "alegre", "count": 10, "avg_prob": 0.3701886559552959}, {"customer_state": "ES", "customer_city": "anchieta", "count": 10, "avg_prob": 0.3768043472037869}, {"customer_state": "ES", "customer_city": "castelo", "count": 10, "avg_prob": 0.36773519987916736}, {"customer_state": "GO", "customer_city": "goiania", "count": 333, "avg_prob": 0.5267624991575307}, {"customer_state": "GO", "customer_city": "anapolis", "count": 61, "avg_prob": 0.512311439568288}, {"customer_state": "GO", "customer_city": "aparecida de goiania", "count": 58, "avg_prob": 0.5099865359057102}, {"customer_state": "GO", "customer_city": "jatai", "count": 38, "avg_prob": 0.49985199947187076}, {"customer_state": "GO", "customer_city": "rio verde", "count": 33, "avg_prob": 0.5032417049830948}, {"customer_state": "GO", "customer_city": "caldas novas", "count": 26, "avg_prob": 0.5305818079435001}, {"customer_state": "GO", "customer_city": "itumbiara", "count": 22, "avg_prob": 0.5369418774425632}, {"customer_state": "GO", "customer_city": "catalao", "count": 20, "avg_prob": 0.48797047404218014}, {"customer_state": "GO", "customer_city": "valparaiso de goias", "count": 20, "avg_prob": 0.5227037744857473}, {"customer_state": "GO", "customer_city": "formosa", "count": 19, "avg_prob": 0.4698149210588099}, {"customer_state": "GO", "customer_city": "luziania", "count": 16, "avg_prob": 0.5570920433500243}, {"customer_state": "GO", "customer_city": "mineiros", "count": 16, "avg_prob": 0.557869721801067}, {"customer_state": "GO", "customer_city": "trindade", "count": 15, "avg_prob": 0.5083189353762443}, {"customer_state": "GO", "customer_city": "aguas lindas de goias", "count": 11, "avg_prob": 0.5539470518919822}, {"customer_state": "GO", "customer_city": "goianesia", "count": 11, "avg_prob": 0.549888874642645}, {"customer_state": "MA", "customer_city": "sao luis", "count": 184, "avg_prob": 0.38356394316301173}, {"customer_state": "MA", "customer_city": "imperatriz", "count": 28, "avg_prob": 0.3397978383659816}, {"customer_state": "MA", "customer_city": "balsas", "count": 12, "avg_prob": 0.33282734627976457}, {"customer_state": "MA", "customer_city": "timon", "count": 9, "avg_prob": 0.3532777597363251}, {"customer_state": "MA", "customer_city": "caxias", "count": 8, "avg_prob": 0.3499740485872025}, {"customer_state": "MA", "customer_city": "sao jose de ribamar", "count": 8, "avg_prob": 0.3420887989107904}, {"customer_state": "MA", "customer_city": "presidente dutra", "count": 7, "avg_prob": 0.35650841925714455}, {"customer_state": "MA", "customer_city": "santa ines", "count": 7, "avg_prob": 0.4071775841508042}, {"customer_state": "MA", "customer_city": "paco do lumiar", "count": 6, "avg_prob": 0.3430773917124103}, {"customer_state": "MA", "customer_city": "alto parnaiba", "count": 5, "avg_prob": 0.3450187504909009}, {"customer_state": "MA", "customer_city": "bacabal", "count": 5, "avg_prob": 0.35153224677757583}, {"customer_state": "MA", "customer_city": "codo", "count": 5, "avg_prob": 0.3372372097390654}, {"customer_state": "MA", "customer_city": "coroata", "count": 5, "avg_prob": 0.47205477556884423}, {"customer_state": "MA", "customer_city": "sao joao dos patos", "count": 5, "avg_prob": 0.31880624316277995}, {"customer_state": "MA", "customer_city": "acailandia", "count": 4, "avg_prob": 0.36122887942289517}, {"customer_state": "MG", "customer_city": "belo horizonte", "count": 1427, "avg_prob": 0.4703344899588674}, {"customer_state": "MG", "customer_city": "juiz de fora", "count": 230, "avg_prob": 0.4452188501618443}, {"customer_state": "MG", "customer_city": "contagem", "count": 224, "avg_prob": 0.4596773377310312}, {"customer_state": "MG", "customer_city": "uberlandia", "count": 219, "avg_prob": 0.46564787540795877}, {"customer_state": "MG", "customer_city": "montes claros", "count": 125, "avg_prob": 0.47039951648397477}, {"customer_state": "MG", "customer_city": "ipatinga", "count": 95, "avg_prob": 0.44479419671480064}, {"customer_state": "MG", "customer_city": "betim", "count": 93, "avg_prob": 0.453280476713539}, {"customer_state": "MG", "customer_city": "uberaba", "count": 90, "avg_prob": 0.4786719112223007}, {"customer_state": "MG", "customer_city": "divinopolis", "count": 88, "avg_prob": 0.4307238586828877}, {"customer_state": "MG", "customer_city": "governador valadares", "count": 74, "avg_prob": 0.4611320598462263}, {"customer_state": "MG", "customer_city": "pouso alegre", "count": 71, "avg_prob": 0.46363454912541974}, {"customer_state": "MG", "customer_city": "sete lagoas", "count": 71, "avg_prob": 0.45650522211857414}, {"customer_state": "MG", "customer_city": "pocos de caldas", "count": 67, "avg_prob": 0.478297106741888}, {"customer_state": "MG", "customer_city": "ribeirao das neves", "count": 60, "avg_prob": 0.46989315430204537}, {"customer_state": "MG", "customer_city": "patos de minas", "count": 56, "avg_prob": 0.4466609729880467}, {"customer_state": "MS", "customer_city": "campo grande", "count": 156, "avg_prob": 0.3618534761567197}, {"customer_state": "MS", "customer_city": "dourados", "count": 30, "avg_prob": 0.42707343336618203}, {"customer_state": "MS", "customer_city": "tres lagoas", "count": 22, "avg_prob": 0.3342183555423396}, {"customer_state": "MS", "customer_city": "corumba", "count": 10, "avg_prob": 0.35489676844305584}, {"customer_state": "MS", "customer_city": "paranaiba", "count": 9, "avg_prob": 0.4147692820824793}, {"customer_state": "MS", "customer_city": "chapadao do sul", "count": 8, "avg_prob": 0.33812490127114314}, {"customer_state": "MS", "customer_city": "nova andradina", "count": 8, "avg_prob": 0.35107089860325014}, {"customer_state": "MS", "customer_city": "coxim", "count": 7, "avg_prob": 0.3537744412851057}, {"customer_state": "MS", "customer_city": "maracaju", "count": 7, "avg_prob": 0.3857936584056097}, {"customer_state": "MS", "customer_city": "ponta pora", "count": 7, "avg_prob": 0.4263418515211234}, {"customer_state": "MS", "customer_city": "camapua", "count": 6, "avg_prob": 0.3626696559401031}, {"customer_state": "MS", "customer_city": "rio brilhante", "count": 6, "avg_prob": 0.41601435206735743}, {"customer_state": "MS", "customer_city": "amambai", "count": 5, "avg_prob": 0.41252529017356815}, {"customer_state": "MS", "customer_city": "costa rica", "count": 5, "avg_prob": 0.3906088204330084}, {"customer_state": "MS", "customer_city": "bonito", "count": 4, "avg_prob": 0.3412269629826456}, {"customer_state": "MT", "customer_city": "cuiaba", "count": 118, "avg_prob": 0.3620878098217027}, {"customer_state": "MT", "customer_city": "rondonopolis", "count": 35, "avg_prob": 0.3883911347040147}, {"customer_state": "MT", "customer_city": "sinop", "count": 22, "avg_prob": 0.4005083719275309}, {"customer_state": "MT", "customer_city": "varzea grande", "count": 19, "avg_prob": 0.35833832744551036}, {"customer_state": "MT", "customer_city": "caceres", "count": 17, "avg_prob": 0.3595022799350229}, {"customer_state": "MT", "customer_city": "primavera do leste", "count": 16, "avg_prob": 0.38639269595962944}, {"customer_state": "MT", "customer_city": "barra do garcas", "count": 15, "avg_prob": 0.42243201092077237}, {"customer_state": "MT", "customer_city": "lucas do rio verde", "count": 15, "avg_prob": 0.3687557649152287}, {"customer_state": "MT", "customer_city": "tangara da serra", "count": 14, "avg_prob": 0.37962952510283043}, {"customer_state": "MT", "customer_city": "sorriso", "count": 13, "avg_prob": 0.35743828840163633}, {"customer_state": "MT", "customer_city": "agua boa", "count": 11, "avg_prob": 0.3988927249937521}, {"customer_state": "MT", "customer_city": "alta floresta", "count": 10, "avg_prob": 0.36555777777150344}, {"customer_state": "MT", "customer_city": "juina", "count": 10, "avg_prob": 0.3850973364704131}, {"customer_state": "MT", "customer_city": "campo novo do parecis", "count": 9, "avg_prob": 0.3452073127349144}, {"customer_state": "MT", "customer_city": "mirassol d'oeste", "count": 9, "avg_prob": 0.39862277768967425}, {"customer_state": "PA", "customer_city": "belem", "count": 237, "avg_prob": 0.42465969331968106}, {"customer_state": "PA", "customer_city": "ananindeua", "count": 46, "avg_prob": 0.4293412586596705}, {"customer_state": "PA", "customer_city": "santarem", "count": 28, "avg_prob": 0.4027907608428302}, {"customer_state": "PA", "customer_city": "parauapebas", "count": 18, "avg_prob": 0.44290423248454025}, {"customer_state": "PA", "customer_city": "castanhal", "count": 15, "avg_prob": 0.41811089748937147}, {"customer_state": "PA", "customer_city": "maraba", "count": 12, "avg_prob": 0.40557169238589047}, {"customer_state": "PA", "customer_city": "paragominas", "count": 12, "avg_prob": 0.4490388865376531}, {"customer_state": "PA", "customer_city": "altamira", "count": 10, "avg_prob": 0.4197719437870136}, {"customer_state": "PA", "customer_city": "marituba", "count": 10, "avg_prob": 0.43036893589796366}, {"customer_state": "PA", "customer_city": "tucurui", "count": 10, "avg_prob": 0.42291440666562535}, {"customer_state": "PA", "customer_city": "redencao", "count": 9, "avg_prob": 0.41451353005073116}, {"customer_state": "PA", "customer_city": "braganca", "count": 7, "avg_prob": 0.39896213501793915}, {"customer_state": "PA", "customer_city": "xinguara", "count": 6, "avg_prob": 0.5035427538697589}, {"customer_state": "PA", "customer_city": "dom eliseu", "count": 5, "avg_prob": 0.4705708224050943}, {"customer_state": "PA", "customer_city": "jacunda", "count": 5, "avg_prob": 0.40659516689053465}, {"customer_state": "PB", "customer_city": "joao pessoa", "count": 127, "avg_prob": 0.2446319136694034}, {"customer_state": "PB", "customer_city": "campina grande", "count": 36, "avg_prob": 0.21182541401122112}, {"customer_state": "PB", "customer_city": "patos", "count": 9, "avg_prob": 0.1992070958996333}, {"customer_state": "PB", "customer_city": "guarabira", "count": 8, "avg_prob": 0.24105441866125765}, {"customer_state": "PB", "customer_city": "cajazeiras", "count": 6, "avg_prob": 0.20100864381657235}, {"customer_state": "PB", "customer_city": "sousa", "count": 6, "avg_prob": 0.23614587516310856}, {"customer_state": "PB", "customer_city": "bayeux", "count": 5, "avg_prob": 0.20749137807063037}, {"customer_state": "PB", "customer_city": "santa luzia", "count": 4, "avg_prob": 0.23548982005775387}, {"customer_state": "PB", "customer_city": "catole do rocha", "count": 3, "avg_prob": 0.12740922221120352}, {"customer_state": "PB", "customer_city": "pocinhos", "count": 3, "avg_prob": 0.25113989983336305}, {"customer_state": "PB", "customer_city": "pombal", "count": 3, "avg_prob": 0.17352294077530725}, {"customer_state": "PB", "customer_city": "santa rita", "count": 3, "avg_prob": 0.28360116650063477}, {"customer_state": "PB", "customer_city": "sume", "count": 3, "avg_prob": 0.27004318144460626}, {"customer_state": "PB", "customer_city": "alagoinha", "count": 2, "avg_prob": 0.2580539597932749}, {"customer_state": "PB", "customer_city": "alhandra", "count": 2, "avg_prob": 0.13936344363136546}, {"customer_state": "PE", "customer_city": "recife", "count": 298, "avg_prob": 0.35715595899584823}, {"customer_state": "PE", "customer_city": "jaboatao dos guararapes", "count": 56, "avg_prob": 0.34480489992048147}, {"customer_state": "PE", "customer_city": "olinda", "count": 49, "avg_prob": 0.3643970420472866}, {"customer_state": "PE", "customer_city": "petrolina", "count": 39, "avg_prob": 0.31577023555817757}, {"customer_state": "PE", "customer_city": "caruaru", "count": 29, "avg_prob": 0.38187582087510374}, {"customer_state": "PE", "customer_city": "paulista", "count": 23, "avg_prob": 0.33860576037506745}, {"customer_state": "PE", "customer_city": "camaragibe", "count": 15, "avg_prob": 0.36409210616403404}, {"customer_state": "PE", "customer_city": "garanhuns", "count": 15, "avg_prob": 0.39731634842770536}, {"customer_state": "PE", "customer_city": "vitoria de santo antao", "count": 13, "avg_prob": 0.3368814707161736}, {"customer_state": "PE", "customer_city": "cabo de santo agostinho", "count": 11, "avg_prob": 0.3425681014407405}, {"customer_state": "PE", "customer_city": "ipojuca", "count": 9, "avg_prob": 0.3682832095191062}, {"customer_state": "PE", "customer_city": "araripina", "count": 8, "avg_prob": 0.34794196057567434}, {"customer_state": "PE", "customer_city": "igarassu", "count": 8, "avg_prob": 0.3369093540410026}, {"customer_state": "PE", "customer_city": "salgueiro", "count": 8, "avg_prob": 0.3450187740712953}, {"customer_state": "PE", "customer_city": "belo jardim", "count": 7, "avg_prob": 0.3643721660660417}, {"customer_state": "PI", "customer_city": "teresina", "count": 134, "avg_prob": 0.02531837500115258}, {"customer_state": "PI", "customer_city": "parnaiba", "count": 17, "avg_prob": 0.021035798270589358}, {"customer_state": "PI", "customer_city": "floriano", "count": 12, "avg_prob": 0.03635708873199866}, {"customer_state": "PI", "customer_city": "picos", "count": 9, "avg_prob": 0.02059931270946091}, {"customer_state": "PI", "customer_city": "cocal", "count": 7, "avg_prob": 0.023838913735559488}, {"customer_state": "PI", "customer_city": "altos", "count": 5, "avg_prob": 0.01899419406219654}, {"customer_state": "PI", "customer_city": "campo maior", "count": 5, "avg_prob": 0.02291479505086592}, {"customer_state": "PI", "customer_city": "piripiri", "count": 5, "avg_prob": 0.02163258865904224}, {"customer_state": "PI", "customer_city": "corrente", "count": 4, "avg_prob": 0.013199089339648326}, {"customer_state": "PI", "customer_city": "guadalupe", "count": 4, "avg_prob": 0.0178475715910684}, {"customer_state": "PI", "customer_city": "oeiras", "count": 4, "avg_prob": 0.022298037301646874}, {"customer_state": "PI", "customer_city": "sao raimundo nonato", "count": 4, "avg_prob": 0.019053389574301652}, {"customer_state": "PI", "customer_city": "barras", "count": 3, "avg_prob": 0.024507510982645836}, {"customer_state": "PI", "customer_city": "esperantina", "count": 3, "avg_prob": 0.022656701257464832}, {"customer_state": "PI", "customer_city": "fronteiras", "count": 3, "avg_prob": 0.024093113346962635}, {"customer_state": "PR", "customer_city": "curitiba", "count": 767, "avg_prob": 0.4683213506937287}, {"customer_state": "PR", "customer_city": "londrina", "count": 151, "avg_prob": 0.4457322470485428}, {"customer_state": "PR", "customer_city": "maringa", "count": 143, "avg_prob": 0.46154699247628084}, {"customer_state": "PR", "customer_city": "ponta grossa", "count": 79, "avg_prob": 0.4722439960146922}, {"customer_state": "PR", "customer_city": "cascavel", "count": 74, "avg_prob": 0.42731470020650153}, {"customer_state": "PR", "customer_city": "sao jose dos pinhais", "count": 65, "avg_prob": 0.45525217058294815}, {"customer_state": "PR", "customer_city": "foz do iguacu", "count": 41, "avg_prob": 0.43953326847012625}, {"customer_state": "PR", "customer_city": "pinhais", "count": 38, "avg_prob": 0.44788257000957354}, {"customer_state": "PR", "customer_city": "guarapuava", "count": 37, "avg_prob": 0.45056969810373987}, {"customer_state": "PR", "customer_city": "toledo", "count": 35, "avg_prob": 0.44852252594896475}, {"customer_state": "PR", "customer_city": "paranagua", "count": 32, "avg_prob": 0.4574008419564022}, {"customer_state": "PR", "customer_city": "apucarana", "count": 31, "avg_prob": 0.42580502739471743}, {"customer_state": "PR", "customer_city": "campo mourao", "count": 31, "avg_prob": 0.4489219407835417}, {"customer_state": "PR", "customer_city": "colombo", "count": 31, "avg_prob": 0.49785916875956165}, {"customer_state": "PR", "customer_city": "araucaria", "count": 28, "avg_prob": 0.47778044917429563}, {"customer_state": "RJ", "customer_city": "rio de janeiro", "count": 3693, "avg_prob": 0.4905334074123736}, {"customer_state": "RJ", "customer_city": "niteroi", "count": 400, "avg_prob": 0.4998336122877345}, {"customer_state": "RJ", "customer_city": "nova iguacu", "count": 232, "avg_prob": 0.49659419698794055}, {"customer_state": "RJ", "customer_city": "sao goncalo", "count": 229, "avg_prob": 0.4761004789175381}, {"customer_state": "RJ", "customer_city": "duque de caxias", "count": 164, "avg_prob": 0.4770772825842814}, {"customer_state": "RJ", "customer_city": "campos dos goytacazes", "count": 133, "avg_prob": 0.48915308741107316}, {"customer_state": "RJ", "customer_city": "volta redonda", "count": 123, "avg_prob": 0.48961537403562344}, {"customer_state": "RJ", "customer_city": "petropolis", "count": 119, "avg_prob": 0.5069886993427972}, {"customer_state": "RJ", "customer_city": "macae", "count": 110, "avg_prob": 0.4808161124805406}, {"customer_state": "RJ", "customer_city": "marica", "count": 80, "avg_prob": 0.49546675321474015}, {"customer_state": "RJ", "customer_city": "nova friburgo", "count": 74, "avg_prob": 0.48608940257822597}, {"customer_state": "RJ", "customer_city": "rio das ostras", "count": 73, "avg_prob": 0.48377235223034465}, {"customer_state": "RJ", "customer_city": "sao joao de meriti", "count": 72, "avg_prob": 0.47912016345246616}, {"customer_state": "RJ", "customer_city": "barra mansa", "count": 68, "avg_prob": 0.4843726035986151}, {"customer_state": "RJ", "customer_city": "belford roxo", "count": 67, "avg_prob": 0.47279163911570043}, {"customer_state": "RN", "customer_city": "natal", "count": 120, "avg_prob": 0.21740358783445995}, {"customer_state": "RN", "customer_city": "parnamirim", "count": 28, "avg_prob": 0.2499276507534394}, {"customer_state": "RN", "customer_city": "mossoro", "count": 17, "avg_prob": 0.22180063809267248}, {"customer_state": "RN", "customer_city": "alto do rodrigues", "count": 6, "avg_prob": 0.21125904716817945}, {"customer_state": "RN", "customer_city": "caico", "count": 5, "avg_prob": 0.19568646124968916}, {"customer_state": "RN", "customer_city": "currais novos", "count": 5, "avg_prob": 0.13802006737644498}, {"customer_state": "RN", "customer_city": "macau", "count": 4, "avg_prob": 0.18075497183407868}, {"customer_state": "RN", "customer_city": "sao goncalo do amarante", "count": 4, "avg_prob": 0.21411787181911668}, {"customer_state": "RN", "customer_city": "apodi", "count": 3, "avg_prob": 0.16159965511096766}, {"customer_state": "RN", "customer_city": "jardim do serido", "count": 3, "avg_prob": 0.2147157732509609}, {"customer_state": "RN", "customer_city": "pau dos ferros", "count": 3, "avg_prob": 0.18877620267271852}, {"customer_state": "RN", "customer_city": "santa cruz", "count": 3, "avg_prob": 0.18616996392079024}, {"customer_state": "RN", "customer_city": "acu", "count": 2, "avg_prob": 0.23568944816007634}, {"customer_state": "RN", "customer_city": "areia branca", "count": 2, "avg_prob": 0.19863087577211797}, {"customer_state": "RN", "customer_city": "ceara-mirim", "count": 2, "avg_prob": 0.2292631815551996}, {"customer_state": "RO", "customer_city": "porto velho", "count": 61, "avg_prob": 0.3427212329414006}, {"customer_state": "RO", "customer_city": "vilhena", "count": 13, "avg_prob": 0.3483476155791155}, {"customer_state": "RO", "customer_city": "ji-parana", "count": 10, "avg_prob": 0.34245049357439356}, {"customer_state": "RO", "customer_city": "ariquemes", "count": 9, "avg_prob": 0.37192431353807237}, {"customer_state": "RO", "customer_city": "jaru", "count": 5, "avg_prob": 0.3271798029517227}, {"customer_state": "RO", "customer_city": "cacoal", "count": 4, "avg_prob": 0.39540484362415035}, {"customer_state": "RO", "customer_city": "espigao do oeste", "count": 4, "avg_prob": 0.34844113567875873}, {"customer_state": "RO", "customer_city": "rolim de moura", "count": 4, "avg_prob": 0.33334822878073683}, {"customer_state": "RO", "customer_city": "colorado do oeste", "count": 3, "avg_prob": 0.320214287855686}, {"customer_state": "RO", "customer_city": "guajara-mirim", "count": 3, "avg_prob": 0.3219377695343621}, {"customer_state": "RO", "customer_city": "pimenta bueno", "count": 3, "avg_prob": 0.283016176580506}, {"customer_state": "RO", "customer_city": "alta floresta d'oeste", "count": 2, "avg_prob": 0.31634061458035856}, {"customer_state": "RO", "customer_city": "ouro preto do oeste", "count": 2, "avg_prob": 0.2695461690350816}, {"customer_state": "RO", "customer_city": "presidente medici", "count": 2, "avg_prob": 0.32370750175808244}, {"customer_state": "RO", "customer_city": "sao miguel do guapore", "count": 2, "avg_prob": 0.5013158063135723}, {"customer_state": "RR", "customer_city": "boa vista", "count": 20, "avg_prob": 0.11602846484066812}, {"customer_state": "RS", "customer_city": "porto alegre", "count": 743, "avg_prob": 0.5060537292079312}, {"customer_state": "RS", "customer_city": "caxias do sul", "count": 121, "avg_prob": 0.508958279013295}, {"customer_state": "RS", "customer_city": "canoas", "count": 116, "avg_prob": 0.4958999787218743}, {"customer_state": "RS", "customer_city": "santa maria", "count": 98, "avg_prob": 0.4782863771305421}, {"customer_state": "RS", "customer_city": "pelotas", "count": 96, "avg_prob": 0.5037400490847072}, {"customer_state": "RS", "customer_city": "passo fundo", "count": 69, "avg_prob": 0.49258098105866094}, {"customer_state": "RS", "customer_city": "gravatai", "count": 68, "avg_prob": 0.5027264233232975}, {"customer_state": "RS", "customer_city": "rio grande", "count": 65, "avg_prob": 0.5012973629828942}, {"customer_state": "RS", "customer_city": "novo hamburgo", "count": 60, "avg_prob": 0.5068700572580848}, {"customer_state": "RS", "customer_city": "sao leopoldo", "count": 56, "avg_prob": 0.5234176266876914}, {"customer_state": "RS", "customer_city": "cachoeirinha", "count": 40, "avg_prob": 0.5140798840625876}, {"customer_state": "RS", "customer_city": "viamao", "count": 40, "avg_prob": 0.5335024216313888}, {"customer_state": "RS", "customer_city": "santa cruz do sul", "count": 39, "avg_prob": 0.4984725758550992}, {"customer_state": "RS", "customer_city": "bage", "count": 37, "avg_prob": 0.5010650634131306}, {"customer_state": "RS", "customer_city": "alvorada", "count": 30, "avg_prob": 0.526553559198688}, {"customer_state": "SC", "customer_city": "florianopolis", "count": 300, "avg_prob": 0.37872212077259865}, {"customer_state": "SC", "customer_city": "joinville", "count": 141, "avg_prob": 0.36474820740204017}, {"customer_state": "SC", "customer_city": "blumenau", "count": 98, "avg_prob": 0.39151846398065276}, {"customer_state": "SC", "customer_city": "sao jose", "count": 87, "avg_prob": 0.37094013247131385}, {"customer_state": "SC", "customer_city": "itajai", "count": 61, "avg_prob": 0.3839522791090689}, {"customer_state": "SC", "customer_city": "chapeco", "count": 58, "avg_prob": 0.3965605325760958}, {"customer_state": "SC", "customer_city": "jaragua do sul", "count": 56, "avg_prob": 0.370304835823165}, {"customer_state": "SC", "customer_city": "palhoca", "count": 51, "avg_prob": 0.3835764854163302}, {"customer_state": "SC", "customer_city": "balneario camboriu", "count": 46, "avg_prob": 0.3722871904799824}, {"customer_state": "SC", "customer_city": "lages", "count": 42, "avg_prob": 0.3766379694767209}, {"customer_state": "SC", "customer_city": "brusque", "count": 39, "avg_prob": 0.3845195011777072}, {"customer_state": "SC", "customer_city": "criciuma", "count": 39, "avg_prob": 0.36799375985037347}, {"customer_state": "SC", "customer_city": "tubarao", "count": 35, "avg_prob": 0.37917853064329216}, {"customer_state": "SC", "customer_city": "concordia", "count": 30, "avg_prob": 0.403964033023078}, {"customer_state": "SC", "customer_city": "videira", "count": 28, "avg_prob": 0.3464816004686816}, {"customer_state": "SE", "customer_city": "aracaju", "count": 126, "avg_prob": 0.4783109191874103}, {"customer_state": "SE", "customer_city": "nossa senhora do socorro", "count": 12, "avg_prob": 0.4870787695833639}, {"customer_state": "SE", "customer_city": "itabaiana", "count": 10, "avg_prob": 0.45360683902190757}, {"customer_state": "SE", "customer_city": "lagarto", "count": 9, "avg_prob": 0.43663346637425854}, {"customer_state": "SE", "customer_city": "estancia", "count": 8, "avg_prob": 0.4419951458473209}, {"customer_state": "SE", "customer_city": "sao cristovao", "count": 4, "avg_prob": 0.4505211170740047}, {"customer_state": "SE", "customer_city": "sao francisco", "count": 3, "avg_prob": 0.4303090556249319}, {"customer_state": "SE", "customer_city": "simao dias", "count": 3, "avg_prob": 0.46493003001772454}, {"customer_state": "SE", "customer_city": "capela", "count": 2, "avg_prob": 0.5696779328311605}, {"customer_state": "SE", "customer_city": "cedro de sao joao", "count": 2, "avg_prob": 0.28604481889243405}, {"customer_state": "SE", "customer_city": "nossa senhora da gloria", "count": 2, "avg_prob": 0.4153887627523267}, {"customer_state": "SE", "customer_city": "poco verde", "count": 2, "avg_prob": 0.41758632450751115}, {"customer_state": "SE", "customer_city": "aquidaba", "count": 1, "avg_prob": 0.4808098215317964}, {"customer_state": "SE", "customer_city": "barra dos coqueiros", "count": 1, "avg_prob": 0.3623639102480295}, {"customer_state": "SE", "customer_city": "campo do brito", "count": 1, "avg_prob": 0.6223837456233013}, {"customer_state": "SP", "customer_city": "sao paulo", "count": 7602, "avg_prob": 0.5138487104440654}, {"customer_state": "SP", "customer_city": "campinas", "count": 734, "avg_prob": 0.508016356403976}, {"customer_state": "SP", "customer_city": "guarulhos", "count": 580, "avg_prob": 0.5093417873191219}, {"customer_state": "SP", "customer_city": "sao bernardo do campo", "count": 476, "avg_prob": 0.5217811668093288}, {"customer_state": "SP", "customer_city": "santo andre", "count": 410, "avg_prob": 0.518701499653381}, {"customer_state": "SP", "customer_city": "osasco", "count": 374, "avg_prob": 0.51358743715242}, {"customer_state": "SP", "customer_city": "santos", "count": 343, "avg_prob": 0.5094783848739886}, {"customer_state": "SP", "customer_city": "sao jose dos campos", "count": 332, "avg_prob": 0.5210482413359526}, {"customer_state": "SP", "customer_city": "sorocaba", "count": 322, "avg_prob": 0.5164316998212921}, {"customer_state": "SP", "customer_city": "jundiai", "count": 290, "avg_prob": 0.5020085169109874}, {"customer_state": "SP", "customer_city": "ribeirao preto", "count": 260, "avg_prob": 0.5104564718559509}, {"customer_state": "SP", "customer_city": "mogi das cruzes", "count": 226, "avg_prob": 0.5280069942105897}, {"customer_state": "SP", "customer_city": "barueri", "count": 198, "avg_prob": 0.5186772309303914}, {"customer_state": "SP", "customer_city": "piracicaba", "count": 189, "avg_prob": 0.5121138876400402}, {"customer_state": "SP", "customer_city": "sao jose do rio preto", "count": 178, "avg_prob": 0.520748098335057}, {"customer_state": "TO", "customer_city": "palmas", "count": 45, "avg_prob": 0.6164320091973219}, {"customer_state": "TO", "customer_city": "araguaina", "count": 14, "avg_prob": 0.6105773753131662}, {"customer_state": "TO", "customer_city": "gurupi", "count": 13, "avg_prob": 0.6111316748097966}, {"customer_state": "TO", "customer_city": "paraiso do tocantins", "count": 8, "avg_prob": 0.64214320462743}, {"customer_state": "TO", "customer_city": "porto nacional", "count": 6, "avg_prob": 0.5885775323661604}, {"customer_state": "TO", "customer_city": "tocantinopolis", "count": 5, "avg_prob": 0.6175303462562024}, {"customer_state": "TO", "customer_city": "dianopolis", "count": 4, "avg_prob": 0.6134572312761223}, {"customer_state": "TO", "customer_city": "lagoa da confusao", "count": 4, "avg_prob": 0.5411298320636362}, {"customer_state": "TO", "customer_city": "alvorada", "count": 3, "avg_prob": 0.7053144027877684}, {"customer_state": "TO", "customer_city": "guarai", "count": 3, "avg_prob": 0.45538408615509224}, {"customer_state": "TO", "customer_city": "araguatins", "count": 2, "avg_prob": 0.7130486273770955}, {"customer_state": "TO", "customer_city": "barrolandia", "count": 2, "avg_prob": 0.616455071866495}, {"customer_state": "TO", "customer_city": "cariri do tocantins", "count": 2, "avg_prob": 0.6547255540581391}, {"customer_state": "TO", "customer_city": "conceicao do tocantins", "count": 2, "avg_prob": 0.5647971908065923}, {"customer_state": "TO", "customer_city": "cristalandia", "count": 2, "avg_prob": 0.46194546097363687}]};
+
+const I18N = {
+  en: {
+    title: "CustIQ Force — Customer Repeat Propensity",
+    subtitle: "Snapshot: 2018-03-01 | Prediction Window: 180 Days (up to 2018-08-28) | Champion Model: LogisticRegression_balanced",
+    export: "Export Filtered CSV",
+    tab_overview: "1. Executive Overview",
+    tab_geo: "2. Geographic & Cities",
+    tab_model: "3. ML Model Evaluation",
+    tab_payments: "4. Payments & Reviews",
+    tab_customers: "5. Target Customers",
+    seg_title: "Propensity Segmentation Breakdown",
+    seg_desc: "52,013 eligible customers stratified into High (top 5%), Medium (next 15%), and Low (bottom 80%).",
+    hist_title: "Predicted Repeat Probability Distribution",
+    hist_desc: "Histogram across 10 probability bins with Operating Threshold line at 0.60.",
+    geo_state_title: "Top 15 Brazilian States by Customer Volume",
+    geo_state_desc: "Click any bar to filter the dashboard by that state.",
+    geo_city_title: "Top Cities Breakdown",
+    geo_city_desc: "Customer count and average repeat propensity probability by city.",
+    mod_title: "Champion vs. Challenger Model Comparison",
+    mod_desc: "Evaluated on 10,403 temporal holdout test customers (base repeat rate = 1.14%).",
+    mod_table_title: "Detailed Validation Metrics (Threshold = 0.60)",
+    mod_table_desc: "LogisticRegression_balanced achieves 3.33x lift in the top 1% segment.",
+    pay_title: "Payment Methods by Total Revenue (BRL)",
+    pay_desc: "Total payment volume across 103,886 transactions (R$ 16.01M).",
+    rev_title: "Customer Review Score Distribution (1–5 Stars)",
+    rev_desc: "99,224 verified order reviews with an overall mean rating of 4.09 / 5.00.",
+    cust_title: "Actionable Customer Propensity Directory",
+    cust_desc: "Search by Customer ID, City, or State and export directly for CRM retention campaigns."
+  },
+  ar: {
+    title: "CustIQ Force — لوحة تحليل احتمالية تكرار الشراء",
+    subtitle: "تاريخ اللقطة: 2018-03-01 | نافذة التنبؤ: 180 يوماً | النموذج المعتمد: LogisticRegression_balanced",
+    export: "تصدير CSV المفلتر",
+    tab_overview: "1. النظرة التنفيذية العامة",
+    tab_geo: "2. التوزيع الجغرافي والمدن",
+    tab_model: "3. تقييم نماذج التعلم الآلي",
+    tab_payments: "4. المدفوعات وتقييمات العملاء",
+    tab_customers: "5. قائمة العملاء المستهدفين",
+    seg_title: "تقسيم العملاء حسب احتمالية التكرار",
+    seg_desc: "52,013 عميل مؤهل مقسمون إلى: مرتفع (أعلى 5%)، متوسط (15%)، ومنخفض (80%).",
+    hist_title: "توزيع احتمالات تكرار الشراء المتوقعة",
+    hist_desc: "توزيع العملاء على 10 فئات احتمالية مع خط عتبة التشغيل عند 0.60.",
+    geo_state_title: "أعلى 15 ولاية برازيلية من حيث عدد العملاء",
+    geo_state_desc: "اضغط على أي عمود لتصفية لوحة البيانات حسب الولاية.",
+    geo_city_title: "تفاصيل أعلى المدن",
+    geo_city_desc: "عدد العملاء ومتوسط احتمالية تكرار الشراء لكل مدينة.",
+    mod_title: "مقارنة النموذج الفائز بالنموذج المنافس",
+    mod_desc: "تم التقييم على 10,403 عميل اختبار زمني (معدل التكرار الأساسي = 1.14%).",
+    mod_table_title: "مقاييس التحقق التفصيلية (عتبة 0.60)",
+    mod_table_desc: "حقق نموذج الانحدار اللوجستي المتوازن مضاعفة استهداف 3.33x في أعلى 1%.",
+    pay_title: "وسائل الدفع حسب إجمالي الإيرادات (ريال برازيلي)",
+    pay_desc: "إجمالي حجم المدفوعات عبر 103,886 معاملة بقيمة 16.01 مليون ريال.",
+    rev_title: "توزيع تقييمات العملاء (من 1 إلى 5 نجوم)",
+    rev_desc: "99,224 تقييم موثق بمتوسط تقييم عام 4.09 من 5.00.",
+    cust_title: "دليل العملاء وقابلية الاستهداف التسويقي",
+    cust_desc: "ابحث برقم العميل أو المدينة أو الولاية وقم بتصدير القائمة لحملات الاحتفاظ بالعملاء."
+  }
+};
+
+let lang = "en";
+let selectedState = "ALL";
+let selectedSegment = "ALL";
+let searchQuery = "";
+
+const tooltip = document.getElementById("tooltip");
+function showTip(evt, html) {
+  tooltip.innerHTML = html;
+  tooltip.style.display = "block";
+  const pad = 12;
+  const rect = tooltip.getBoundingClientRect();
+  let x = evt.clientX + pad;
+  let y = evt.clientY + pad;
+  if (x + rect.width > window.innerWidth - pad) x = evt.clientX - rect.width - pad;
+  if (y + rect.height > window.innerHeight - pad) y = evt.clientY - rect.height - pad;
+  tooltip.style.left = Math.max(pad, x) + "px";
+  tooltip.style.top = Math.max(pad, y) + "px";
+}
+function hideTip() { tooltip.style.display = "none"; }
+window.addEventListener("scroll", hideTip, true);
+
+// Populate State Filter
+const stateSelect = document.getElementById("stateFilter");
+DATA.states.forEach(s => {
+  const opt = document.createElement("option");
+  opt.value = s.customer_state;
+  opt.textContent = `${s.customer_state} (${s.total_customers.toLocaleString()})`;
+  stateSelect.appendChild(opt);
+});
+
+stateSelect.addEventListener("change", e => { selectedState = e.target.value; renderAll(); });
+document.getElementById("segFilter").addEventListener("change", e => { selectedSegment = e.target.value; renderAll(); });
+document.getElementById("custSearch").addEventListener("input", e => { searchQuery = e.target.value.trim().toLowerCase(); renderCustomers(); });
+
+document.getElementById("langToggle").addEventListener("click", () => {
+  lang = lang === "en" ? "ar" : "en";
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (I18N[lang][key]) el.textContent = I18N[lang][key];
+  });
+  renderAll();
+});
+
+// Tab Switching
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    hideTip();
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+function renderKPIs() {
+  const k = DATA.kpis;
+  let eligible = k.eligible_customers;
+  let highCount = DATA.segments.find(s => s.propensity_segment.startsWith("High")).count;
+  let avgProb = 0.4648;
+
+  if (selectedState !== "ALL") {
+    const st = DATA.states.find(s => s.customer_state === selectedState);
+    if (st) {
+      eligible = st.total_customers;
+      highCount = st.high_count;
+      avgProb = st.avg_prob;
+    }
+  }
+
+  const cards = [
+    {
+      label: lang === "ar" ? "العملاء المؤهلون للتنبؤ" : "Eligible Scored Customers",
+      value: eligible.toLocaleString(),
+      sub: selectedState === "ALL" ? `Out of ${k.total_customers_table.toLocaleString()} total customers` : `Filtered State: ${selectedState}`
+    },
+    {
+      label: lang === "ar" ? "شريحة الاحتمالية المرتفعة (Top 5%)" : "High Propensity Segment",
+      value: highCount.toLocaleString(),
+      sub: `${((highCount / Math.max(1, eligible)) * 100).toFixed(1)}% of active scope`
+    },
+    {
+      label: lang === "ar" ? "مضاعفة الاستهداف (Top 1% Lift)" : "Top 1% Decile Lift",
+      value: k.top1_lift.toFixed(2) + "x",
+      sub: `Base test positive rate: ${k.test_positive_rate_pct}%`
+    },
+    {
+      label: lang === "ar" ? "إجمالي الإيرادات (BRL)" : "Total Item Revenue",
+      value: "R$ " + (k.total_item_revenue_all / 1e6).toFixed(2) + "M",
+      sub: `Avg Order Value: R$ ${k.avg_order_value_all_items.toFixed(2)}`
+    },
+    {
+      label: lang === "ar" ? "متوسط تقييم العملاء" : "Avg Customer Review",
+      value: k.avg_review_score.toFixed(2) + " / 5.0",
+      sub: `${k.total_reviews.toLocaleString()} verified reviews`
+    }
+  ];
+
+  document.getElementById("kpiGrid").innerHTML = cards.map(c => `
+    <div class="kpi-card">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-sub">${c.sub}</div>
+    </div>
+  `).join("");
+}
+
+function renderDonut() {
+  let segs = DATA.segments.map(s => ({ name: s.propensity_segment, count: s.count, avg: s.avg_prob }));
+  if (selectedState !== "ALL") {
+    const st = DATA.states.find(s => s.customer_state === selectedState);
+    if (st) {
+      segs = [
+        { name: "High (top 5%)", count: st.high_count, avg: 0.721 },
+        { name: "Medium (next 15%)", count: st.med_count, avg: 0.590 },
+        { name: "Low (bottom 80%)", count: st.low_count, avg: 0.426 }
+      ];
+    }
+  }
+  const total = segs.reduce((acc, s) => acc + s.count, 0) || 1;
+  const colors = { "High (top 5%)": "#10b981", "Medium (next 15%)": "#f59e0b", "Low (bottom 80%)": "#64748b" };
+
+  const cx = 140, cy = 120, r = 82, strokeW = 28;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+
+  let arcs = "";
+  segs.forEach(s => {
+    const pct = s.count / total;
+    const dash = pct * circ;
+    const col = colors[s.name] || "#3b82f6";
+    arcs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${strokeW}"
+      stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${-offset}"
+      transform="rotate(-90 ${cx} ${cy})" style="cursor:pointer"
+      onmousemove="showTip(event, '<b>${s.name}</b><br/>Customers: ${s.count.toLocaleString()} (${(pct*100).toFixed(1)}%)')"
+      onmouseleave="hideTip()" />`;
+    offset += dash;
+  });
+
+  let legend = "";
+  segs.forEach((s, i) => {
+    const y = 55 + i * 52;
+    const col = colors[s.name] || "#3b82f6";
+    const pct = ((s.count / total) * 100).toFixed(1);
+    legend += `
+      <rect x="275" y="${y - 10}" width="14" height="14" rx="3" fill="${col}" />
+      <text x="296" y="${y + 2}" fill="#f8fafc" font-size="13" font-weight="600">${s.name}</text>
+      <text x="296" y="${y + 20}" fill="#94a3b8" font-size="12">${s.count.toLocaleString()} customers (${pct}%)</text>
+    `;
+  });
+
+  document.getElementById("donutChart").innerHTML = `
+    <svg class="chart-svg" viewBox="0 0 500 240">
+      ${arcs}
+      <text x="${cx}" y="${cy - 4}" text-anchor="middle" fill="#f8fafc" font-size="18" font-weight="700">${total.toLocaleString()}</text>
+      <text x="${cx}" y="${cy + 16}" text-anchor="middle" fill="#94a3b8" font-size="11">Customers</text>
+      ${legend}
+    </svg>
+  `;
+}
+
+function renderHistogram() {
+  const bins = DATA.prob_histogram;
+  const maxVal = Math.max(...bins.map(b => b.count));
+  const W = 520, H = 240, padL = 48, padR = 16, padT = 22, padB = 38;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const barW = plotW / bins.length;
+
+  let bars = "";
+  bins.forEach((b, i) => {
+    const bh = (b.count / maxVal) * plotH;
+    const x = padL + i * barW + 4;
+    const y = padT + plotH - bh;
+    const isHigh = i >= 6;
+    const fill = isHigh ? "#10b981" : "#3b82f6";
+    bars += `
+      <rect x="${x}" y="${y}" width="${barW - 8}" height="${bh}" rx="4" fill="${fill}"
+        style="cursor:pointer"
+        onmousemove="showTip(event, '<b>Prob Bin: ${b.prob_bin}</b><br/>Customers: ${b.count.toLocaleString()}')"
+        onmouseleave="hideTip()" />
+      <text x="${x + (barW - 8)/2}" y="${H - 14}" text-anchor="middle" fill="#94a3b8" font-size="10">${b.prob_bin}</text>
+    `;
+  });
+
+  // Threshold line at 0.60 (between bin 5 and bin 6)
+  const threshX = padL + 6 * barW;
+  const threshLine = `
+    <line x1="${threshX}" y1="${padT - 6}" x2="${threshX}" y2="${padT + plotH}" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 3" />
+    <text x="${threshX + 5}" y="${padT + 8}" fill="#fbbf24" font-size="11" font-weight="600">Threshold 0.60</text>
+  `;
+
+  document.getElementById("histChart").innerHTML = `
+    <svg class="chart-svg" viewBox="0 0 ${W} ${H}">
+      <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#334155" />
+      <text x="${padL - 6}" y="${padT + 6}" text-anchor="end" fill="#94a3b8" font-size="10">${maxVal.toLocaleString()}</text>
+      <text x="${padL - 6}" y="${padT + plotH}" text-anchor="end" fill="#94a3b8" font-size="10">0</text>
+      ${bars}
+      ${threshLine}
+    </svg>
+  `;
+}
+
+function renderStates() {
+  const top15 = DATA.states.slice(0, 15);
+  const maxVal = Math.max(...top15.map(s => s.total_customers));
+  const W = 520, H = 340, padL = 44, padR = 60, padT = 10, padB = 16;
+  const plotW = W - padL - padR;
+  const rowH = (H - padT - padB) / top15.length;
+
+  let rows = "";
+  top15.forEach((s, i) => {
+    const bw = (s.total_customers / maxVal) * plotW;
+    const y = padT + i * rowH + 3;
+    const active = selectedState === s.customer_state;
+    const fill = active ? "#10b981" : "#3b82f6";
+    rows += `
+      <text x="${padL - 8}" y="${y + rowH/2}" text-anchor="end" fill="#f8fafc" font-size="11" font-weight="600">${s.customer_state}</text>
+      <rect x="${padL}" y="${y}" width="${Math.max(3, bw)}" height="${rowH - 6}" rx="3" fill="${fill}"
+        style="cursor:pointer"
+        onclick="selectStateFromBar('${s.customer_state}')"
+        onmousemove="showTip(event, '<b>State: ${s.customer_state}</b><br/>Customers: ${s.total_customers.toLocaleString()}<br/>High Propensity: ${s.high_count.toLocaleString()}<br/>Avg Prob: ${(s.avg_prob*100).toFixed(1)}%')"
+        onmouseleave="hideTip()" />
+      <text x="${padL + bw + 6}" y="${y + rowH/2}" fill="#94a3b8" font-size="10">${s.total_customers.toLocaleString()}</text>
+    `;
+  });
+
+  document.getElementById("stateBarChart").innerHTML = `
+    <svg class="chart-svg" viewBox="0 0 ${W} ${H}">${rows}</svg>
+  `;
+
+  // Cities table
+  let cities = DATA.cities_by_state;
+  if (selectedState !== "ALL") {
+    cities = cities.filter(c => c.customer_state === selectedState);
+  } else {
+    cities = [...cities].sort((a, b) => b.count - a.count).slice(0, 15);
+  }
+  document.getElementById("cityTableBody").innerHTML = cities.map(c => `
+    <tr>
+      <td><strong>${c.customer_state}</strong></td>
+      <td style="text-transform:capitalize;">${c.customer_city}</td>
+      <td>${c.count.toLocaleString()}</td>
+      <td>${(c.avg_prob * 100).toFixed(2)}%</td>
+    </tr>
+  `).join("");
+}
+
+function selectStateFromBar(st) {
+  selectedState = selectedState === st ? "ALL" : st;
+  stateSelect.value = selectedState;
+  renderAll();
+}
+
+function renderModels() {
+  const models = DATA.model_metrics;
+  const metrics = [
+    { key: "roc_auc", label: "ROC-AUC" },
+    { key: "average_precision_pr_auc", label: "PR-AUC" },
+    { key: "recall_at_threshold", label: "Recall@0.60" },
+    { key: "f1_at_threshold", label: "F1@0.60" }
+  ];
+  const W = 500, H = 240, padL = 45, padR = 20, padT = 32, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const groupW = plotW / metrics.length;
+
+  let bars = "";
+  metrics.forEach((m, i) => {
+    const gx = padL + i * groupW;
+    const v0 = models[0][m.key];
+    const v1 = models[1][m.key];
+    const h0 = (v0 / 0.7) * plotH;
+    const h1 = (v1 / 0.7) * plotH;
+    const bw = 26;
+
+    bars += `
+      <rect x="${gx + 18}" y="${padT + plotH - h0}" width="${bw}" height="${Math.max(2, h0)}" rx="4" fill="#10b981"
+        onmousemove="showTip(event, '<b>LogisticRegression_balanced</b><br/>${m.label}: ${v0.toFixed(4)}')" onmouseleave="hideTip()" />
+      <rect x="${gx + 18 + bw + 6}" y="${padT + plotH - h1}" width="${bw}" height="${Math.max(2, h1)}" rx="4" fill="#64748b"
+        onmousemove="showTip(event, '<b>RandomForest_balanced</b><br/>${m.label}: ${v1.toFixed(4)}')" onmouseleave="hideTip()" />
+      <text x="${gx + groupW/2}" y="${H - 12}" text-anchor="middle" fill="#cbd5e1" font-size="11">${m.label}</text>
+    `;
+  });
+
+  document.getElementById("modelChart").innerHTML = `
+    <svg class="chart-svg" viewBox="0 0 ${W} ${H}">
+      <rect x="45" y="8" width="12" height="12" rx="2" fill="#10b981" />
+      <text x="63" y="18" fill="#f8fafc" font-size="11">LogisticRegression_balanced (Selected)</text>
+      <rect x="285" y="8" width="12" height="12" rx="2" fill="#64748b" />
+      <text x="303" y="18" fill="#94a3b8" font-size="11">RandomForest_balanced</text>
+      <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#334155" />
+      ${bars}
+    </svg>
+  `;
+
+  document.getElementById("modelTableBody").innerHTML = models.map(m => `
+    <tr>
+      <td><strong>${m.model}</strong></td>
+      <td>${m.selected ? '<span class="pill pill-high">Champion</span>' : '<span class="pill pill-low">Challenger</span>'}</td>
+      <td>${m.average_precision_pr_auc.toFixed(4)}</td>
+      <td>${m.roc_auc.toFixed(4)}</td>
+      <td>${(m.precision_at_threshold * 100).toFixed(2)}%</td>
+      <td>${(m.recall_at_threshold * 100).toFixed(2)}%</td>
+      <td>${m.f1_at_threshold.toFixed(4)}</td>
+    </tr>
+  `).join("");
+}
+
+function renderPaymentsAndReviews() {
+  const pays = DATA.payments.filter(p => p.payment_type !== "not_defined");
+  const maxPay = Math.max(...pays.map(p => p.total_value));
+  const W = 500, H = 220, padL = 95, padR = 75, padT = 16, padB = 16;
+  const plotW = W - padL - padR;
+  const rowH = (H - padT - padB) / pays.length;
+
+  let pBars = "";
+  pays.forEach((p, i) => {
+    const bw = (p.total_value / maxPay) * plotW;
+    const y = padT + i * rowH + 6;
+    pBars += `
+      <text x="${padL - 8}" y="${y + rowH/2 - 2}" text-anchor="end" fill="#f8fafc" font-size="11" style="text-transform:capitalize;">${p.payment_type.replace("_"," ")}</text>
+      <rect x="${padL}" y="${y}" width="${Math.max(4, bw)}" height="${rowH - 14}" rx="4" fill="#3b82f6"
+        onmousemove="showTip(event, '<b>${p.payment_type}</b><br/>Revenue: R$ ${p.total_value.toLocaleString()}<br/>Txns: ${p.transactions.toLocaleString()}<br/>Avg Installments: ${p.avg_installments.toFixed(1)}')"
+        onmouseleave="hideTip()" />
+      <text x="${padL + bw + 6}" y="${y + rowH/2 - 2}" fill="#94a3b8" font-size="11">R$ ${(p.total_value/1e6).toFixed(2)}M</text>
+    `;
+  });
+  document.getElementById("paymentChart").innerHTML = `<svg class="chart-svg" viewBox="0 0 ${W} ${H}">${pBars}</svg>`;
+
+  const revs = DATA.reviews;
+  const maxRev = Math.max(...revs.map(r => r.count));
+  const rRowH = (H - padT - padB) / revs.length;
+  const starColors = ["#ef4444", "#f97316", "#f59e0b", "#3b82f6", "#10b981"];
+
+  let rBars = "";
+  revs.forEach((r, i) => {
+    const bw = (r.count / maxRev) * plotW;
+    const y = padT + i * rRowH + 5;
+    rBars += `
+      <text x="${padL - 8}" y="${y + rRowH/2 - 2}" text-anchor="end" fill="#f8fafc" font-size="11">${r.review_score} ★</text>
+      <rect x="${padL}" y="${y}" width="${Math.max(4, bw)}" height="${rRowH - 12}" rx="4" fill="${starColors[i]}"
+        onmousemove="showTip(event, '<b>${r.review_score} Stars</b><br/>Reviews: ${r.count.toLocaleString()}')"
+        onmouseleave="hideTip()" />
+      <text x="${padL + bw + 6}" y="${y + rRowH/2 - 2}" fill="#94a3b8" font-size="11">${r.count.toLocaleString()}</text>
+    `;
+  });
+  document.getElementById("reviewChart").innerHTML = `<svg class="chart-svg" viewBox="0 0 ${W} ${H}">${rBars}</svg>`;
+}
+
+function getFilteredCustomers() {
+  return DATA.customers.filter(c => {
+    if (selectedState !== "ALL" && c.customer_state !== selectedState) return false;
+    if (selectedSegment !== "ALL" && c.propensity_segment !== selectedSegment) return false;
+    if (searchQuery) {
+      const hay = `${c.customer_unique_id} ${c.customer_state} ${c.customer_city}`.toLowerCase();
+      if (!hay.includes(searchQuery)) return false;
+    }
+    return true;
+  });
+}
+
+function renderCustomers() {
+  const rows = getFilteredCustomers();
+  document.getElementById("custTableBody").innerHTML = rows.map((c, idx) => {
+    let pillClass = "pill-low";
+    if (c.propensity_segment.startsWith("High")) pillClass = "pill-high";
+    else if (c.propensity_segment.startsWith("Medium")) pillClass = "pill-med";
+    return `
+      <tr>
+        <td>${idx + 1}</td>
+        <td style="font-family:monospace;font-size:0.8rem;">${c.customer_unique_id}</td>
+        <td><strong>${c.customer_state}</strong></td>
+        <td style="text-transform:capitalize;">${c.customer_city}</td>
+        <td><strong>${(c.predicted_repeat_probability * 100).toFixed(2)}%</strong></td>
+        <td>${(c.propensity_percentile * 100).toFixed(2)}%</td>
+        <td><span class="pill ${pillClass}">${c.propensity_segment}</span></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+document.getElementById("exportCsvBtn").addEventListener("click", () => {
+  const rows = getFilteredCustomers();
+  const headers = ["customer_unique_id", "customer_state", "customer_city", "predicted_repeat_probability", "propensity_percentile", "propensity_segment"];
+  const csv = [
+    headers.join(","),
+    ...rows.map(r => headers.map(h => JSON.stringify(r[h])).join(","))
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `custiq_filtered_${selectedState}_${rows.length}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function renderAll() {
+  renderKPIs();
+  renderDonut();
+  renderHistogram();
+  renderStates();
+  renderModels();
+  renderPaymentsAndReviews();
+  renderCustomers();
+}
+
+renderAll();
+</script>
+</body>
+</html>
